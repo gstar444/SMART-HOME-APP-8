@@ -30,7 +30,7 @@ class Device {
 
   final String name;
 
-  /// Local address of the board (http://<ip>). Only used for local control and provisioning.
+  /// Local address of the board (http://`<ip>`). Only used for local control and provisioning.
   final String url;
 
   /// Board id (sh-xxxxxx) once the board has been claimed or recognised. '' = not known yet.

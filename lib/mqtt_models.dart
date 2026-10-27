@@ -1,10 +1,10 @@
 /// Typed models for the MQTT protocol spoken by firmware 4.x (see docs/PROTOCOL.md).
 ///
-///   sh/v1/<home>/<board>/cmd        app  -> board   (QoS 1, not retained)
-///   sh/v1/<home>/<board>/ack        board -> app    (reply to a command)
-///   sh/v1/<home>/<board>/state      board -> app    (retained, live values)
-///   sh/v1/<home>/<board>/inventory  board -> app    (retained, rooms/devices/scenes)
-///   sh/v1/<home>/<board>/lwt        board -> app    (retained, "online"/"offline"; broker publishes
+///   sh/v1/`<home>`/`<board>`/cmd        app  -> board   (QoS 1, not retained)
+///   sh/v1/`<home>`/`<board>`/ack        board -> app    (reply to a command)
+///   sh/v1/`<home>`/`<board>`/state      board -> app    (retained, live values)
+///   sh/v1/`<home>`/`<board>`/inventory  board -> app    (retained, rooms/devices/scenes)
+///   sh/v1/`<home>`/`<board>`/lwt        board -> app    (retained, "online"/"offline"; broker publishes
 ///                                                    "offline" as the Last Will if the board vanishes)
 ///
 /// The local REST endpoint GET /api/v2/state returns the SAME inventory and state objects, so every
@@ -36,7 +36,7 @@ class Topics {
         for (final leaf in const ['state', 'inventory', 'lwt', 'ack']) '$topicRoot/$homeId/+/$leaf',
       ];
 
-  /// Splits "sh/v1/<home>/<board>/<leaf>" into board and leaf; null for anything else.
+  /// Splits "sh/v1/`<home>`/`<board>`/`<leaf>`" into board and leaf; null for anything else.
   ({String board, String leaf})? parse(String topic) {
     final p = topic.split('/');
     if (p.length != 5 || p[0] != 'sh' || p[1] != 'v1' || p[2] != homeId) return null;
@@ -432,7 +432,7 @@ class BoardView {
 }
 
 // ---------------------------------------------------------------------------- composite ids
-/// Devices of different boards may share an id ("light"), so the dashboard uses "<board>/<device>".
+/// Devices of different boards may share an id ("light"), so the dashboard uses "`<board>`/`<device>`".
 String compositeId(String board, String device) => '$board/$device';
 
 ({String board, String device})? splitCompositeId(String id) {

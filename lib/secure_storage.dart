@@ -72,7 +72,7 @@ class CloudConfig {
   final String username;
   final String password;
 
-  /// Topic namespace; must equal the board's `mqtt.homeId` (topics: sh/v1/<homeId>/<board>/...).
+  /// Topic namespace; must equal the board's `mqtt.homeId` (topics: sh/v1/`<homeId>`/`<board>`/...).
   final String homeId;
 
   /// Optional PEM added to the trusted roots (self-hosted broker with a private CA, or a provider
@@ -170,7 +170,7 @@ class SecureStore {
 
   Future<void> clearCloud() => _kv.delete(_cloudKey);
 
-  /// [boardKey] is the board id once known (sh-xxxxxx), otherwise "url:<address>".
+  /// [boardKey] is the board id once known (sh-xxxxxx), otherwise "url:`<address>`".
   Future<String?> boardToken(String boardKey) => _kv.read(_tokenKey(boardKey));
 
   Future<void> setBoardToken(String boardKey, String token) => _kv.write(_tokenKey(boardKey), token);
