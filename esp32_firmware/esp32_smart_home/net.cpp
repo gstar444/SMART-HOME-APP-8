@@ -12,6 +12,7 @@
 enum ConnState : uint8_t { CS_IDLE, CS_PENDING, CS_TRYING };
 
 static bool apActive = false;
+static uint8_t wifiFailCount = 0;
 static char apSsid[24] = "";
 static ConnState connState = CS_IDLE;
 static String pendSsid, pendPass;
@@ -62,8 +63,8 @@ static void beginSta(const char* ssid, const char* pass) {
   WiFi.begin(ssid, pass);
 }
 
-static void startAp() {
-  if (apActive || cfg.auth.claimCode[0] == '\0') return;   // never an open or default-password hotspot
+static void startAp(bool force = false) {
+  if (apActive || (!force && cfg.auth.claimCode[0] == '\0')) return;   // never an open or default-password hotspot
   WiFi.mode(WIFI_AP_STA);                                  // STA stays on so networks can be scanned
   apActive = WiFi.softAP(apSsid, cfg.auth.claimCode);
   apStartedAt = millis();
@@ -251,6 +252,7 @@ void netTick(uint32_t now) {
 
   // 3) normal life
   bool up = netStaUp();
+  if (up) wifiFailCount = 0;
   if (up != lastUp) {
     lastUp = up;
     lastChange = now;
@@ -267,6 +269,8 @@ void netTick(uint32_t now) {
   }
   if (!up && cfg.wifi.ssid[0] && (uint32_t)(now - lastWifiTry) > (apActive ? 30000UL : 10000UL)) {
     lastWifiTry = now;
+    if (wifiFailCount < 255) wifiFailCount++;
+    if (wifiFailCount >= 2 && !apActive) startAp(true);
     WiFi.disconnect();
     beginSta(cfg.wifi.ssid, cfg.wifi.password);
   }
@@ -280,7 +284,7 @@ void netTick(uint32_t now) {
     Serial.println("[net] provisioning complete: claim code deleted");
   }
   // An unclaimed board does not keep a hotspot open forever: 15 min, only while nobody is connected.
-  if (apActive && (uint32_t)(now - apStartedAt) > 15UL * 60UL * 1000UL && WiFi.softAPgetStationNum() == 0) {
+  if (apActive && wifiFailCount < 2 && (uint32_t)(now - apStartedAt) > 15UL * 60UL * 1000UL && WiFi.softAPgetStationNum() == 0) {
     stopAp();
     Serial.println("[net] hotspot closed after 15 min (reboot or hold BOOT 8 s to open it again)");
   }
