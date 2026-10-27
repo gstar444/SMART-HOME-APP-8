@@ -236,6 +236,7 @@ void devTick(uint32_t now) {
   if ((uint32_t)(now - lastDhtMs) >= 3000UL) {   // DHT22 needs >= 2 s between reads
     lastDhtMs = now;
     float t = dht.readTemperature(), h = dht.readHumidity();
+  Serial.print("[dht] t="); Serial.print(t); Serial.print(" h="); Serial.println(h);
   if (t < -40 || t > 80) t = NAN;
   if (h < 0 || h > 100) h = NAN;
     bool changed = false;
