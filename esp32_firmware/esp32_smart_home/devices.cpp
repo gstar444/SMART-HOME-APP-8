@@ -236,6 +236,8 @@ void devTick(uint32_t now) {
   if ((uint32_t)(now - lastDhtMs) >= 3000UL) {   // DHT22 needs >= 2 s between reads
     lastDhtMs = now;
     float t = dht.readTemperature(), h = dht.readHumidity();
+  if (t < -40 || t > 80) t = NAN;
+  if (h < 0 || h > 100) h = NAN;
     bool changed = false;
     if (!isnan(t)) { if (isnan(gTemp) || fabsf(t - gTemp) >= 0.5f) changed = true; gTemp = t; }
     if (!isnan(h)) { if (isnan(gHum) || fabsf(h - gHum) >= 2.0f) changed = true; gHum = h; }
