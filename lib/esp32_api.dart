@@ -140,7 +140,6 @@ abstract interface class LocalBoard implements Listenable {
   Future<String?> setDevice(String id, bool on);
   Future<String?> setDnd(bool on);
   Future<String?> runScene(String id);
-  @override
   Future<String?> addDevice({
     required String name,
     required String icon,
@@ -372,7 +371,7 @@ class Esp32Controller extends ChangeNotifier with WidgetsBindingObserver impleme
   // --------------------------------------------------------------- writes
   String _raw(String id) => splitCompositeId(id)?.device ?? id;
 
-  /// [id] is the dashboard id ("<board>/<device>") or a bare device id.
+  /// [id] is the dashboard id ("`<board>`/`<device>`") or a bare device id.
   /// Returns null on success, otherwise a message that can be shown to the user.
   @override
   Future<String?> setDevice(String id, bool on) {
@@ -402,6 +401,7 @@ class Esp32Controller extends ChangeNotifier with WidgetsBindingObserver impleme
   Future<String?> runScene(String id) => _write('scene', {'scene': id}, busyKey: 'scene:$id');
 
   // ------------------------------------------------------- device list
+  @override
   Future<String?> addDevice({
     required String name,
     required String icon,
@@ -411,7 +411,7 @@ class Esp32Controller extends ChangeNotifier with WidgetsBindingObserver impleme
   }) =>
       _write(
         'device/add',
-        {'name': name, 'icon': icon, 'pin': pin, 'room': roomId, if (watts != null) 'watts': watts},
+        {'name': name, 'icon': icon, 'pin': pin, 'room': roomId, 'watts': ?watts},
         busyKey: 'device:add',
       );
 
@@ -428,11 +428,11 @@ class Esp32Controller extends ChangeNotifier with WidgetsBindingObserver impleme
         'device/update',
         {
           'id': _raw(id),
-          if (name != null) 'name': name,
-          if (icon != null) 'icon': icon,
-          if (pin != null) 'pin': pin,
-          if (roomId != null) 'room': roomId,
-          if (watts != null) 'watts': watts,
+          'name': ?name,
+          'icon': ?icon,
+          'pin': ?pin,
+          'room': ?roomId,
+          'watts': ?watts,
         },
         busyKey: id,
       );

@@ -9,6 +9,7 @@
 ///
 /// The local REST endpoint GET /api/v2/state returns the SAME inventory and state objects, so every
 /// parser here serves both transports.
+library;
 import 'dart:convert';
 
 import 'models.dart';

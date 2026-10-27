@@ -61,12 +61,11 @@ class MqttService extends ChangeNotifier {
   MqttService({
     required MqttTransport Function() transportFactory,
     DateTime Function()? clock,
-    Duration ackTimeout = const Duration(seconds: 5),
+    this._ackTimeout = const Duration(seconds: 5),
     Duration Function(int attempt)? delayFor,
     Random? random,
   })  : _factory = transportFactory,
         _clock = clock ?? DateTime.now,
-        _ackTimeout = ackTimeout,
         _delayFor = delayFor ?? reconnectDelay,
         _random = random ?? Random.secure();
 

@@ -523,7 +523,6 @@ class _DashboardPageState extends State<DashboardPage> {
 
   // --------------------------------------------------------------- tiles
   List<_Tile> _buildTiles(Tr tr, Esp32State st, int room) {
-    final s = _s;
     final tiles = <_Tile>[];
 
     for (final d in st.devices) {
@@ -891,7 +890,6 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _energy(Tr tr, Esp32State st, int room, Color accent) {
-    final s = _s;
     final ids = <String>{};
     var watts = 0.0;
     var wh = 0.0;

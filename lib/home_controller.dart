@@ -63,10 +63,9 @@ class HomeController extends ChangeNotifier {
     this.cache,
     DateTime Function()? clock,
     Duration reevaluateEvery = const Duration(seconds: 20),
-    Duration cacheDelay = const Duration(seconds: 3),
+    this._cacheDelay = const Duration(seconds: 3),
     Random? random,
   })  : _clock = clock ?? DateTime.now,
-        _cacheDelay = cacheDelay,
         _random = random ?? Random.secure() {
     _restored.addAll(cache?.load(now: _clock()) ?? const <String, CachedBoard>{});
     mqtt.addListener(_onSource);
@@ -433,9 +432,9 @@ class HomeController extends ChangeNotifier {
       {
         'op': 'device.update',
         'dev': sp.device,
-        if (name != null) 'name': name,
-        if (icon != null) 'icon': icon,
-        if (roomId != null) 'room': roomId,
+        'name': ?name,
+        'icon': ?icon,
+        'room': ?roomId,
       },
       busyKey: id,
     );

@@ -1,5 +1,6 @@
 /// Data classes shown by the dashboard. They are built from the firmware 4.x documents
 /// (see mqtt_models.dart: the same inventory/state JSON arrives over MQTT and local REST).
+library;
 
 int? _int(Object? v) => v is num ? v.toInt() : null;
 
@@ -28,7 +29,7 @@ class Esp32Device {
     this.remoteAllowed = true,
   });
 
-  /// Dashboard-wide id: "<board>/<device>" (two boards may both have a "light").
+  /// Dashboard-wide id: "`<board>`/`<device>`" (two boards may both have a "light").
   final String id;
   final String name;
 
@@ -53,7 +54,7 @@ class Esp32Device {
   bool get isSwitch => type == 'switch';
   bool get controllable => type == 'switch' || type == 'lock';
 
-  /// Id of the device on its own board (without the "<board>/" prefix).
+  /// Id of the device on its own board (without the "`<board>`/" prefix).
   String get rawId {
     final i = id.indexOf('/');
     return i < 0 ? id : id.substring(i + 1);
