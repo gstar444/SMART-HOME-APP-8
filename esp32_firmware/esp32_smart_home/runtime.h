@@ -27,7 +27,7 @@
 // Optional DHT22 temperature/humidity sensor (as in firmware v3). Set HAS_DHT to 0 if you
 // do not have the "DHT sensor library" installed or no sensor wired.
 #ifndef HAS_DHT
-#define HAS_DHT 0
+#define HAS_DHT 1
 #endif
 #ifndef DHT_PIN
 #define DHT_PIN 4
