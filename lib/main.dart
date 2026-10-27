@@ -89,3 +89,14 @@ class SmartHomeApp extends StatelessWidget {
     );
   }
 }
+
+ThemeData buildTheme(Color accent, Brightness brightness) {
+  return ThemeData(
+    useMaterial3: true,
+    brightness: brightness,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: accent,
+      brightness: brightness,
+    ),
+  );
+}
