@@ -1,0 +1,85 @@
+name: Build and test
+
+on:
+  workflow_dispatch:        # GitHub -> Actions -> "Build and test" -> "Run workflow"
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  firmware-logic:
+    # Host tests of the ESP32 logic that does not need hardware (GPIO policy, config validation,
+    # migration, security helpers, config store against in-memory flash). Needs only g++ and python3.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: tests/firmware/syntax_check.sh
+      - run: tests/firmware/run_tests.sh
+      - run: sh tests/policy_checks.sh
+      - name: "App and firmware speak the same protocol"
+        run: python3 tools/check_protocol_consistency.py
+      - name: "Dart sources: static sanity checks (no SDK needed)"
+        run: python3 tools/static_check_dart.py
+      - run: python3 esp32_firmware/tools/validate_config.py
+      - name: "CA header is in sync with the pinned PEM files"
+        run: |
+          python3 esp32_firmware/tools/gen_ca_header.py
+          git diff --exit-code esp32_firmware/esp32_smart_home/ca_roots.h
+
+  app:
+    runs-on: ubuntu-latest
+    env:
+      KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter --version
+      - run: flutter pub get
+
+      # Formatting is reported but does not block (run `dart format .` locally and commit the result).
+      - run: dart format --output=none --set-exit-if-changed .
+        continue-on-error: true
+      # Errors and warnings block the build. Info-level hints are printed but not fatal.
+      - run: flutter analyze --no-fatal-infos
+      - run: flutter test
+
+      - name: "Release APK (signed with YOUR keystore from repository secrets)"
+        if: env.KEYSTORE_B64 != ''
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > android/app/upload-keystore.jks
+          printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=upload-keystore.jks\n' \
+            "$KEYSTORE_PASSWORD" "$KEY_PASSWORD" "$KEY_ALIAS" > android/key.properties
+          flutter build apk --release --split-per-abi
+          rm -f android/app/upload-keystore.jks android/key.properties
+
+      # No secrets configured (forks, first runs): still build a fast RELEASE apk. It is signed with a throw-away key
+      # created for this run only (never the debug key, never committed). Android refuses to update an app signed with a
+      # different key, so uninstall the previous build first - or add the four secrets above to keep one stable key.
+      - name: "Release APK (no secrets configured: throw-away signing key for this run)"
+        if: env.KEYSTORE_B64 == ''
+        run: |
+          PASS=$(openssl rand -hex 16)
+          keytool -genkeypair -keystore android/app/ci-temporary.jks -storepass "$PASS" -keypass "$PASS" \
+            -alias ci -keyalg RSA -keysize 2048 -validity 30 -dname "CN=Smart Home CI temporary key"
+          printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=ci\nstoreFile=ci-temporary.jks\n' "$PASS" "$PASS" > android/key.properties
+          flutter build apk --release --split-per-abi
+          rm -f android/app/ci-temporary.jks android/key.properties
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: smart-home-apk
+          path: |
+            build/app/outputs/flutter-apk/*.apk

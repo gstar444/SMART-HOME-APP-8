@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/smart-home/config.schema.json",
+  "title": "ESP32 Smart Home board configuration (schema version 2)",
+  "description": "Document stored as /config.json on the board's LittleFS and accepted by POST /api/v2/config/replace. Secrets (Wi-Fi password, MQTT password) may appear in the on-board file but are never returned by the API. The 'auth' section is written by the board itself; a client-supplied 'auth' is ignored. The firmware performs additional semantic checks (GPIO safety per chip, duplicate pins, automation loops, 'never unlock' rule) that JSON Schema cannot express - see docs/PROTOCOL.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion"],
+  "properties": {
+    "schemaVersion": { "const": 2 },
+    "revision": { "type": "integer", "minimum": 1, "description": "Incremented by the board on every save." },
+    "nextDeviceId": { "type": "integer", "minimum": 1, "description": "Counter used to generate ids like d12." },
+    "board": { "$ref": "#/$defs/board" },
+    "wifi": { "$ref": "#/$defs/wifi" },
+    "mqtt": { "$ref": "#/$defs/mqtt" },
+    "auth": { "$ref": "#/$defs/auth" },
+    "rooms": { "type": "array", "maxItems": 16, "items": { "$ref": "#/$defs/room" }, "description": "Includes tombstones of deleted rooms. At least one room must be live." },
+    "devices": { "type": "array", "maxItems": 24, "items": { "$ref": "#/$defs/device" } },
+    "scenes": { "type": "array", "maxItems": 8, "items": { "$ref": "#/$defs/scene" } },
+    "schedules": { "type": "array", "maxItems": 16, "items": { "$ref": "#/$defs/schedule" } },
+    "automations": { "type": "array", "maxItems": 12, "items": { "$ref": "#/$defs/automation" } }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9_]{1,15}$" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 47, "description": "UTF-8, at most 47 BYTES on the board (e.g. Hindi characters take 3 bytes each)." },
+    "hhmm": { "type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$" },
+    "target": {
+      "type": "string",
+      "pattern": "^(type:(switch|lock)|icon:(light|fan|heater|curtain|purifier|siren|lock|plug)|[A-Za-z0-9_]{1,15})$",
+      "description": "A device id, 'type:switch' / 'type:lock', or 'icon:<icon>'. PIR inputs are read-only and can not be targets."
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "state"],
+      "properties": {
+        "target": { "$ref": "#/$defs/target" },
+        "state": { "enum": ["on", "off", "lock"], "description": "'lock' locks a lock. Configuration can never unlock: 'off' on a lock is rejected." }
+      }
+    },
+    "board": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "$ref": "#/$defs/name" },
+        "profile": { "enum": ["auto", "esp32", "esp32-s3", "esp32-c3"], "description": "Must match the chip the firmware was built for (or 'auto')." },
+        "psram": { "type": "boolean", "description": "Module has PSRAM (WROVER, S3 R-variants): reserves its GPIOs (ESP32: 16/17; S3: 33-37)." },
+        "relayActiveLow": { "type": "boolean" },
+        "resetPin": { "type": "integer", "minimum": -1, "maximum": 48, "description": "-1 = the chip's BOOT button (GPIO0, or GPIO9 on ESP32-C3)." },
+        "tz": { "type": "string", "pattern": "^[A-Za-z0-9+:,./<>-]{1,39}$", "description": "POSIX TZ string, e.g. IST-5:30 or CET-1CEST,M3.5.0,M10.5.0/3." }
+      }
+    },
+    "wifi": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ssid": { "type": "string", "minLength": 1, "maxLength": 32 },
+        "password": { "type": "string", "maxLength": 63, "description": "Empty (open network) or 8-63 characters. Omit to keep the stored password." }
+      }
+    },
+    "mqtt": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "remoteConfig": { "type": "boolean", "description": "Allow room/name/icon changes over MQTT. Relay commands are always allowed; pins, Wi-Fi, credentials and rules never are." },
+        "provider": { "enum": ["hivemq", "emqx", "custom"] },
+        "host": { "type": "string", "pattern": "^[A-Za-z0-9.-]{3,63}$", "not": { "pattern": "^[0-9]{1,3}(\\.[0-9]{1,3}){3}$" }, "description": "Broker host NAME. IP addresses are rejected: the TLS certificate is checked against the name." },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535, "description": "TLS port. hivemq/emqx require 8883." },
+        "username": { "type": "string", "maxLength": 47 },
+        "password": { "type": "string", "maxLength": 95, "description": "Per-board broker password. Omit to keep the stored one." },
+        "homeId": { "type": "string", "pattern": "^[a-z0-9_-]{1,32}$", "description": "Topic namespace: sh/v1/<homeId>/<boardId>/..." }
+      }
+    },
+    "auth": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Written by the board. Never put a plain token here: only the SHA-256 hash is stored.",
+      "properties": {
+        "claimed": { "type": "boolean" },
+        "tokenHash": { "type": "string", "pattern": "^[0-9a-f]{64}$|^$" },
+        "claimCode": { "type": "string", "pattern": "^[0-9A-HJKMNP-TV-Z]{5}-[0-9A-HJKMNP-TV-Z]{5}$|^$" }
+      }
+    },
+    "room": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "rev"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "$ref": "#/$defs/name" },
+        "rev": { "type": "integer", "minimum": 1, "description": "Higher rev wins; equal rev: a tombstone beats a live room, else the greater name wins." },
+        "deleted": { "type": "boolean" }
+      }
+    },
+    "device": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "pin"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "$ref": "#/$defs/name" },
+        "type": { "enum": ["switch", "lock", "pir"], "description": "Derived from the icon when omitted; must agree with it." },
+        "group": { "type": "string", "minLength": 1, "maxLength": 15 },
+        "icon": { "enum": ["light", "fan", "heater", "curtain", "purifier", "siren", "lock", "pir", "plug"] },
+        "room": { "type": "string", "maxLength": 15, "description": "Room id, or empty for unassigned." },
+        "pin": { "type": "integer", "minimum": -1, "maximum": 255, "description": "GPIO number. The board rejects pins that are unsafe for its chip." },
+        "invert": { "type": "boolean", "description": "Locks: the strike is energised when UNlocked." },
+        "enabled": { "type": "boolean" },
+        "remote": { "type": "boolean", "description": "May be switched through the cloud. Defaults to false for locks (locking is always allowed remotely, unlocking needs true)." },
+        "watts": { "type": "integer", "minimum": 0, "maximum": 5000, "description": "Rated load, used for the ESTIMATED energy figure." },
+        "autoOffMin": { "type": "integer", "minimum": 0, "maximum": 1440 },
+        "bootState": { "enum": ["off", "on", "last"], "description": "Heater, siren, lock and PIR must be 'off'." },
+        "riskyPinOk": { "type": "boolean", "description": "Set by v3 migration only; ignored in client requests." }
+      }
+    },
+    "scene": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "actions"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 31 },
+        "actions": { "type": "array", "minItems": 1, "maxItems": 8, "items": { "$ref": "#/$defs/action" } }
+      }
+    },
+    "schedule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "days", "time", "action"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 31 },
+        "enabled": { "type": "boolean" },
+        "days": { "type": "array", "minItems": 1, "maxItems": 7, "items": { "type": "integer", "minimum": 0, "maximum": 6 }, "description": "0 = Sunday ... 6 = Saturday." },
+        "time": { "$ref": "#/$defs/hhmm" },
+        "action": { "$ref": "#/$defs/action" }
+      }
+    },
+    "automation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "trigger", "actions"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 31 },
+        "enabled": { "type": "boolean" },
+        "trigger": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type"],
+          "properties": {
+            "type": { "enum": ["device", "temp"] },
+            "device": { "$ref": "#/$defs/id" },
+            "state": { "enum": ["on", "off"] },
+            "op": { "enum": [">", "<"] },
+            "value": { "type": "number", "minimum": -39.9, "maximum": 124.9 }
+          }
+        },
+        "window": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["from", "to"],
+          "properties": { "from": { "$ref": "#/$defs/hhmm" }, "to": { "$ref": "#/$defs/hhmm" } },
+          "description": "Only fire inside this local-time window; from > to wraps past midnight."
+        },
+        "cooldownSec": { "type": "integer", "minimum": 5, "maximum": 65535 },
+        "actions": { "type": "array", "minItems": 1, "maxItems": 4, "items": { "$ref": "#/$defs/action" } }
+      }
+    }
+  }
+}

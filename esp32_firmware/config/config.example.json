@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 2,
+  "board": {
+    "name": "Living area board",
+    "profile": "auto",
+    "psram": false,
+    "relayActiveLow": true,
+    "resetPin": -1,
+    "tz": "IST-5:30"
+  },
+  "mqtt": {
+    "enabled": false,
+    "remoteConfig": true,
+    "provider": "hivemq",
+    "host": "your-cluster-id.s1.eu.hivemq.cloud",
+    "port": 8883,
+    "username": "board-living",
+    "homeId": "myhome"
+  },
+  "rooms": [
+    { "id": "living",  "name": "Living room", "rev": 1 },
+    { "id": "bedroom", "name": "Bedroom",     "rev": 1 },
+    { "id": "kitchen", "name": "Kitchen",     "rev": 1 }
+  ],
+  "devices": [
+    { "id": "light1",  "name": "Main light",  "icon": "light",  "room": "living",  "pin": 23, "watts": 12 },
+    { "id": "fan1",    "name": "Ceiling fan", "icon": "fan",    "room": "living",  "pin": 22, "watts": 60, "bootState": "last" },
+    { "id": "heater1", "name": "Heater",      "icon": "heater", "room": "bedroom", "pin": 19, "watts": 1000, "autoOffMin": 180 },
+    { "id": "door",    "name": "Front door",  "icon": "lock",   "room": "living",  "pin": 21, "invert": true, "remote": false },
+    { "id": "pir1",    "name": "Hall motion", "icon": "pir",    "room": "living",  "pin": 34 },
+    { "id": "siren",   "name": "Siren",       "icon": "siren",  "room": "living",  "pin": 18, "autoOffMin": 5 },
+    { "id": "plug1",   "name": "Coffee plug", "icon": "plug",   "room": "kitchen", "pin": 25, "watts": 800 }
+  ],
+  "scenes": [
+    { "id": "alloff",    "name": "All off",    "actions": [ { "target": "type:switch", "state": "off" } ] },
+    { "id": "goodnight", "name": "Good night", "actions": [ { "target": "type:switch", "state": "off" }, { "target": "type:lock", "state": "lock" } ] },
+    { "id": "dinner",    "name": "Dinner",     "actions": [ { "target": "icon:light", "state": "on" }, { "target": "icon:fan", "state": "off" }, { "target": "icon:heater", "state": "off" } ] }
+  ],
+  "schedules": [
+    { "id": "evening", "name": "Evening light", "enabled": true, "days": [0, 1, 2, 3, 4, 5, 6], "time": "18:30",
+      "action": { "target": "light1", "state": "on" } },
+    { "id": "latelock", "name": "Lock at night", "enabled": true, "days": [0, 1, 2, 3, 4, 5, 6], "time": "23:30",
+      "action": { "target": "door", "state": "lock" } }
+  ],
+  "automations": [
+    { "id": "hallmotion", "name": "Light on motion (evenings)", "enabled": true,
+      "trigger": { "type": "device", "device": "pir1", "state": "on" },
+      "window": { "from": "18:00", "to": "23:30" },
+      "cooldownSec": 60,
+      "actions": [ { "target": "light1", "state": "on" } ] },
+    { "id": "hotfan", "name": "Fan on when hot", "enabled": true,
+      "trigger": { "type": "temp", "op": ">", "value": 30 },
+      "cooldownSec": 600,
+      "actions": [ { "target": "fan1", "state": "on" } ] }
+  ]
+}

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="smart_home_icon_background">#F3EADB</color>
+    <color name="smart_home_splash_top">#FAF6EE</color>
+    <color name="smart_home_splash_bottom">#E7D6BF</color>
+</resources>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Network security policy of the app.
+
+  * Cleartext (plain http) is NOT permitted for anything that goes through Android's networking
+    stack, including WebView. The MQTT connection to the cloud is TLS with certificate checks and
+    does not depend on this file.
+  * The app's local control link (Dart HttpClient talking to http://<board-ip>/api/v2/...) uses Dart's
+    own sockets, which Android's cleartext policy does not govern. It is plain HTTP on your Wi-Fi by
+    design; see docs/SECURITY.md for what that does and does not protect.
+  * Only the optional camera viewer (a WebView) can need an exception. If your ESP32-CAM is served
+    over plain http, add ITS host here (exact host or IP, no wildcards for IP addresses), for example:
+
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">192.168.1.50</domain>
+    </domain-config>
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
