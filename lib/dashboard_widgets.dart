@@ -395,6 +395,7 @@ class DeviceTile extends StatelessWidget {
     required this.glyph,
     required this.label,
     required this.accent,
+    this.id,
     this.caption,
     this.active = false,
     this.outline = false,
@@ -417,9 +418,24 @@ class DeviceTile extends StatelessWidget {
   final int span;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
+  final String? id;
 
   @override
   Widget build(BuildContext context) {
+    final tile = _tileBody(context);
+    if (id == null) return tile;
+    return LongPressDraggable<String>(
+      data: id!,
+      feedback: Material(
+        color: Colors.transparent,
+        child: SizedBox(width: width * span + 12.0 * (span - 1), child: tile),
+      ),
+      childWhenDragging: Opacity(opacity: 0.35, child: tile),
+      child: tile,
+    );
+  }
+
+  Widget _tileBody(BuildContext context) {
     final dark = _isDark(context);
     final scheme = Theme.of(context).colorScheme;
     final totalWidth = width * span + 12.0 * (span - 1);
@@ -511,7 +527,6 @@ class DeviceTile extends StatelessWidget {
                 child: InkWell(
                   borderRadius: radius,
                   onTap: onTap,
-                  onLongPress: onLongPress,
                   child: Center(child: inside),
                 ),
               ),

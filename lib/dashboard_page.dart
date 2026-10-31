@@ -35,6 +35,7 @@ class _Tile {
     this.span = 1,
     this.onTap,
     this.onLongPress,
+    this.id,
   });
 
   final String group;
@@ -47,6 +48,7 @@ class _Tile {
   final int span;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
+  final String? id;
 }
 
 GlyphBuilder _iconGlyph(IconData icon) =>
@@ -500,6 +502,11 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  Future<void> _dropToRoom(String deviceId, int room) async {
+    final error = await _esp.moveDevice(deviceId, room);
+    if (error != null) _snack(error);
+  }
+
   Future<void> _moveDevice(Esp32Device d) async {
     final tr = Tr.of(_s);
     final rooms = _esp.roomNames;
@@ -546,7 +553,8 @@ class _DashboardPageState extends State<DashboardPage> {
         span: d.isLock ? 2 : 1,
         busy: _esp.isBusy(d.id),
         onTap: d.controllable ? () => _toggle(d) : null,
-        onLongPress: () => _deviceMenu(d),
+        id: d.id,
+    onLongPress: () => _deviceMenu(d),
       ));
     }
 
@@ -655,6 +663,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   dim: dim && t.group != 'Scenes',
                   onTap: t.onTap,
                   onLongPress: t.onLongPress,
+            id: t.id,
                 ),
             ],
           ),
@@ -840,6 +849,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       accent: accent,
                       onTap: () => setState(() => _room = i),
                       onLongPress: () => _roomMenu(i),
+                    onDropDevice: (id) => _dropToRoom(id, i),
                     ),
                   ),
               ],
