@@ -503,6 +503,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _dropToRoom(String deviceId, int room) async {
+    _esp.setLocalRoom(deviceId, room);
     final error = await _esp.moveDevice(deviceId, room);
     if (!mounted) return;
     if (error != null) {
