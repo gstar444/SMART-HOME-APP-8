@@ -60,13 +60,13 @@ class Esp32Device {
     return i < 0 ? id : id.substring(i + 1);
   }
 
-  Esp32Device copyWith({bool? on}) => Esp32Device(
+  Esp32Device copyWith({bool? on, int? room}) => Esp32Device(
         id: id,
         name: name,
         type: type,
         group: group,
         icon: icon,
-        room: room,
+        room: room ?? this.room,
         on: on ?? this.on,
         watts: watts,
         wh: wh,
@@ -125,6 +125,10 @@ class Esp32State {
 
   Esp32State withDevice(String id, {required bool on}) => _copy(
         devices: [for (final d in devices) d.id == id ? d.copyWith(on: on) : d],
+      );
+
+  Esp32State withRoom(String id, int room) => _copy(
+        devices: [for (final d in devices) d.id == id ? d.copyWith(room: room) : d],
       );
 
   Esp32State withDnd(bool value) => _copy(dnd: value);

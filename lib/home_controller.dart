@@ -412,6 +412,12 @@ class HomeController extends ChangeNotifier {
     return local.addDevice(name: name, icon: icon, pin: pin, roomId: _roomIdAt(room), watts: watts);
   }
 
+  void setLocalRoom(String id, int room) {
+    final s = _state;
+    if (s == null) return;
+    notifyListeners();
+  }
+
   Future<String?> updateDevice(
     String id, {
     String? name,

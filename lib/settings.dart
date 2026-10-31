@@ -68,6 +68,7 @@ class AppSettings {
     this.cameraUrl = '',
     this.rooms = defaultRooms,
     this.roomOf = const <String, int>{},
+    this.order = const <String, int>{},
   });
 
   final String title;
@@ -90,6 +91,7 @@ class AppSettings {
   /// boards and synchronised through MQTT/REST, so the dashboard no longer reads this.
   final List<String> rooms;
   final Map<String, int> roomOf; // legacy, unused since 4.0
+  final Map<String, int> order; // device id -> position in its room
 
   Device get device {
     if (devices.isEmpty) return const Device(name: 'ESP32', url: defaultEsp32Url);
@@ -114,6 +116,7 @@ class AppSettings {
     String? cameraUrl,
     List<String>? rooms,
     Map<String, int>? roomOf,
+    Map<String, int>? order,
   }) {
     return AppSettings(
       title: title ?? this.title,
@@ -131,6 +134,7 @@ class AppSettings {
       cameraUrl: cameraUrl ?? this.cameraUrl,
       rooms: rooms ?? this.rooms,
       roomOf: roomOf ?? this.roomOf,
+      order: order ?? this.order,
     );
   }
 
@@ -167,6 +171,12 @@ class AppSettings {
           if (r is String && r.trim().isNotEmpty) r,
     ];
     final rawRoomOf = json['roomOf'];
+  final rawOrder = json['order'];
+  final order = <String, int>{
+    if (rawOrder is Map)
+      for (final e in rawOrder.entries)
+        if (e.key is String && e.value is int) e.key as String: e.value as int,
+  };
     final roomOf = <String, int>{
       if (rawRoomOf is Map)
         for (final e in rawRoomOf.entries)
@@ -190,6 +200,7 @@ class AppSettings {
       cameraUrl: _validCameraUrl((json['cameraUrl'] as String?) ?? '') ? (json['cameraUrl'] as String) : '',
       rooms: rooms.isEmpty ? d.rooms : rooms,
       roomOf: roomOf,
+      order: order,
     );
   }
 }
