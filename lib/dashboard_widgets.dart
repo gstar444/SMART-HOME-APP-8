@@ -335,6 +335,7 @@ class RoomChip extends StatelessWidget {
     required this.accent,
     required this.onTap,
     this.onLongPress,
+    this.onDropDevice,
   });
 
   final String label;
@@ -342,35 +343,41 @@ class RoomChip extends StatelessWidget {
   final Color accent;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
+  final void Function(String deviceId)? onDropDevice;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      onLongPress: onLongPress,
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          color: selected ? accent.withValues(alpha: 0.2) : Colors.transparent,
-          border: Border.all(color: selected ? accent : _border(context)),
-          boxShadow: selected
-              ? [BoxShadow(color: accent.withValues(alpha: 0.35), blurRadius: 14)]
-              : null,
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-            color: selected
-                ? Theme.of(context).colorScheme.onSurface
-                : _muted(context),
+    return DragTarget<String>(
+      onWillAcceptWithDetails: (_) => onDropDevice != null,
+      onAcceptWithDetails: (d) => onDropDevice?.call(d.data),
+      builder: (context, candidate, rejected) {
+        final hovering = candidate.isNotEmpty;
+        return GestureDetector(
+          onTap: onTap,
+          onLongPress: onLongPress,
+          behavior: HitTestBehavior.opaque,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              color: selected || hovering ? accent.withValues(alpha: 0.2) : Colors.transparent,
+              border: Border.all(color: selected || hovering ? accent : _border(context)),
+              boxShadow: selected
+                  ? [BoxShadow(color: accent.withValues(alpha: 0.35), blurRadius: 14)]
+                  : null,
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                color: selected ? Theme.of(context).colorScheme.onSurface : _muted(context),
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
