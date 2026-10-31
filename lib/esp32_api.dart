@@ -571,7 +571,7 @@ class Esp32Controller extends ChangeNotifier with WidgetsBindingObserver impleme
     try {
       await client.start();
       await for (final ip in client.lookup<IPAddressResourceRecord>(
-          ResourceRecordQuery.addressIPv4('smarthome-282160.local'))) {
+          ResourceRecordQuery.addressIPv4('sh-282160.local'))) {
         return 'http://${ip.address.address}/';
       }
       return null;
