@@ -6,7 +6,7 @@
 #if HAS_DHT
 #include <DHT.h>
 #ifndef DHT_TYPE
-#define DHT_TYPE DHT11
+#define DHT_TYPE DHT_TYPE_11
 #endif
 static DHT dht(DHT_PIN, DHT_TYPE);
 #endif
