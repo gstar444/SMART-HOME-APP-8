@@ -3,6 +3,8 @@
          allowBackup is off: broker credentials and board tokens live in the Android Keystore-backed
          secure storage and must never be copied into cloud/device backups. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
 
     <application
         android:name="${applicationName}"

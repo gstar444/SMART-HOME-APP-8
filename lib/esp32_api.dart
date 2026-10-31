@@ -1,3 +1,4 @@
+import 'package:multicast_dns/multicast_dns.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -542,8 +543,48 @@ class Esp32Controller extends ChangeNotifier with WidgetsBindingObserver impleme
   }
 
   // ----------------------------------------------------------------- http
-  Future<Map<String, dynamic>> _call(String method, String path, {Map<String, dynamic>? body}) {
-    final http = BoardHttp(baseUrl: _settings.value.activeUrl, token: _token, client: _client);
+  // Try the saved IP first; if the board moved (DHCP), find it by its mDNS name.
+  Future<String> _resolveUrl() async {
+    final saved = _settings.value.activeUrl;
+    if (await _reachable(saved)) return saved;
+    final found = await _discoverByMdns();
+    if (found != null && found != saved) {
+      final s = _settings.value;
+      final updated = [for (final d in s.devices) d.url == saved ? d.copyWith(url: found) : d];
+      await _settings.update(s.copyWith(devices: updated));
+      return found;
+    }
+    return saved;
+  }
+
+  Future<bool> _reachable(String url) async {
+    try {
+      await BoardHttp(baseUrl: url, token: _token, client: _client).call('GET', '/api/v2/state');
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<String?> _discoverByMdns() async {
+    final client = MDnsClient();
+    try {
+      await client.start();
+      await for (final ip in client.lookup<IPAddressResourceRecord>(
+          ResourceRecordQuery.addressIPv4('smarthome-282160.local'))) {
+        return 'http://${ip.address.address}/';
+      }
+      return null;
+    } catch (_) {
+      return null;
+    } finally {
+      client.stop();
+    }
+  }
+
+  Future<Map<String, dynamic>> _call(String method, String path, {Map<String, dynamic>? body}) async {
+    final url = await _resolveUrl();
+    final http = BoardHttp(baseUrl: url, token: _token, client: _client);
     return http.call(method, path, body: body);
   }
 

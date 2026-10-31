@@ -252,7 +252,7 @@ void netTick(uint32_t now) {
 
   // 3) normal life
   bool up = netStaUp();
-  if (up) wifiFailCount = 0;
+  if (up) { wifiFailCount = 0; }
   if (up != lastUp) {
     lastUp = up;
     lastChange = now;
@@ -267,12 +267,22 @@ void netTick(uint32_t now) {
     configTzTime(cfg.board.tz, "pool.ntp.org", "time.google.com");
     copyStr(ntpTz, sizeof(ntpTz), cfg.board.tz);
   }
-  if (!up && cfg.wifi.ssid[0] && (uint32_t)(now - lastWifiTry) > (apActive ? 30000UL : 10000UL)) {
-    lastWifiTry = now;
-    if (wifiFailCount < 255) wifiFailCount++;
-    if (wifiFailCount >= 2 && !apActive) startAp(true);
-    WiFi.disconnect();
-    beginSta(cfg.wifi.ssid, cfg.wifi.password);
+  if (up) {
+    wifiFailCount = 0;
+    if (apActive) stopAp();
+  } else if (cfg.wifi.ssid[0]) {
+    if (wifiFailCount < 2) {
+      if ((uint32_t)(now - lastWifiTry) > 5000UL) {
+        lastWifiTry = now;
+        wifiFailCount++;
+        WiFi.disconnect();
+        beginSta(cfg.wifi.ssid, cfg.wifi.password);
+      }
+    } else if (!apActive) {
+      // both tries failed: open the fallback hotspot (its own tick)
+      startAp(true);
+      delay(200);
+    }
   }
 
   // Provisioning finished once the board has been claimed AND stayed on Wi-Fi for 30 s:
@@ -282,10 +292,5 @@ void netTick(uint32_t now) {
     configSave();
     stopAp();
     Serial.println("[net] provisioning complete: claim code deleted");
-  }
-  // An unclaimed board does not keep a hotspot open forever: 15 min, only while nobody is connected.
-  if (apActive && wifiFailCount < 2 && (uint32_t)(now - apStartedAt) > 15UL * 60UL * 1000UL && WiFi.softAPgetStationNum() == 0) {
-    stopAp();
-    Serial.println("[net] hotspot closed after 15 min (reboot or hold BOOT 8 s to open it again)");
   }
 }
