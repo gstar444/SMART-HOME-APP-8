@@ -504,7 +504,12 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Future<void> _dropToRoom(String deviceId, int room) async {
     final error = await _esp.moveDevice(deviceId, room);
-    if (error != null) _snack(error);
+    if (!mounted) return;
+    if (error != null) {
+      _snack(error);
+      return;
+    }
+    setState(() {});
   }
 
   Future<void> _moveDevice(Esp32Device d) async {
