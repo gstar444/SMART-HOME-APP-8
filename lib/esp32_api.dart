@@ -324,7 +324,7 @@ class Esp32Controller extends ChangeNotifier with WidgetsBindingObserver impleme
       if (urlAtStart == _settings.value.activeUrl) {
         _failures++;
         _error = _friendly(e);
-        if (_failures >= 2 || _state == null) _online = false;
+        if (_failures >= 2) _online = false;
       }
     } finally {
       _refreshing = false;
@@ -559,7 +559,7 @@ class Esp32Controller extends ChangeNotifier with WidgetsBindingObserver impleme
 
   Future<bool> _reachable(String url) async {
     try {
-      await BoardHttp(baseUrl: url, token: _token, client: _client).call('GET', '/api/v2/state');
+      await BoardHttp(baseUrl: url, token: _token, client: _client).call('GET', '/api/v2/state').timeout(const Duration(seconds: 4));
       return true;
     } catch (_) {
       return false;
