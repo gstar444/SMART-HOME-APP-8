@@ -335,10 +335,10 @@ class Esp32Controller extends ChangeNotifier
     if (_refreshing || _disposed) return;
     _refreshing = true;
     final startedAt = DateTime.now();
-    final urlAtStart = _settings.value.activeUrl;
+    final deviceAtStart = _settings.value.activeDevice;
     try {
       final json = await _call('GET', 'state');
-      if (urlAtStart == _settings.value.activeUrl) {
+      if (deviceAtStart == _settings.value.activeDevice) {
         final Esp32State next;
         try {
           next = esp32StateFromRest(json);
@@ -361,14 +361,14 @@ class Esp32Controller extends ChangeNotifier
         }
       }
     } catch (e) {
-      if (urlAtStart == _settings.value.activeUrl) {
+      if (deviceAtStart == _settings.value.activeDevice) {
         _failures++;
         _error = _friendly(e);
         if (_failures >= 2) _online = false;
       }
     } finally {
       _refreshing = false;
-      if (urlAtStart == _settings.value.activeUrl) _loaded = true;
+      if (deviceAtStart == _settings.value.activeDevice) _loaded = true;
       if (!_disposed) notifyListeners();
     }
   }

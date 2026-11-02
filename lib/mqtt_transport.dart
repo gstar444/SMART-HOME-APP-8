@@ -54,8 +54,6 @@ class MqttClientTransport implements MqttTransport {
       }
     }
     client.securityContext = context;
-    client.onBadCertificate = (dynamic certificate) =>
-        false; // never accept an unverifiable certificate
     client.setProtocolV311();
     client.keepAlivePeriod = 30;
     client.connectTimeoutPeriod = 8000;
