@@ -65,22 +65,37 @@ void main() {
     expect(s.activeUrl, defaultEsp32Url);
   });
 
-  test('poll interval, board ids and the camera address survive a JSON round trip', () {
-    const original = AppSettings(
-      pollSeconds: 5,
-      cameraUrl: 'http://192.168.1.50:81/stream',
-      devices: [Device(name: 'Hall', url: 'http://192.168.1.10', boardId: 'sh-aabbcc')],
-    );
-    final copy = AppSettings.fromJson(original.toJson());
-    expect(copy.pollSeconds, 5);
-    expect(copy.cameraUrl, 'http://192.168.1.50:81/stream');
-    expect(copy.device.boardId, 'sh-aabbcc');
-    expect(copy.device.tokenKey, 'sh-aabbcc');
-    expect(const Device(name: 'x', url: 'http://1.2.3.4').tokenKey, 'url:http://1.2.3.4');
-  });
+  test(
+    'poll interval, board ids and the camera address survive a JSON round trip',
+    () {
+      const original = AppSettings(
+        pollSeconds: 5,
+        cameraUrl: 'http://192.168.1.50:81/stream',
+        devices: [
+          Device(
+            name: 'Hall',
+            url: 'http://192.168.1.10',
+            boardId: 'sh-aabbcc',
+          ),
+        ],
+      );
+      final copy = AppSettings.fromJson(original.toJson());
+      expect(copy.pollSeconds, 5);
+      expect(copy.cameraUrl, 'http://192.168.1.50:81/stream');
+      expect(copy.device.boardId, 'sh-aabbcc');
+      expect(copy.device.tokenKey, 'sh-aabbcc');
+      expect(
+        const Device(name: 'x', url: 'http://1.2.3.4').tokenKey,
+        'url:http://1.2.3.4',
+      );
+    },
+  );
 
   test('a plaintext API key left by app 3.x is dropped, and unsafe camera addresses are ignored', () {
-    final s = AppSettings.fromJson({'apiKey': 'old-secret', 'cameraUrl': 'javascript:alert(1)'});
+    final s = AppSettings.fromJson({
+      'apiKey': 'old-secret',
+      'cameraUrl': 'javascript:alert(1)',
+    });
     expect(s.toJson().containsKey('apiKey'), isFalse);
     expect(s.cameraUrl, isEmpty);
     expect(isAcceptableCameraUrl('file:///etc/passwd'), isFalse);
@@ -90,54 +105,82 @@ void main() {
 
   group('firmware 4.x state document', () {
     Map<String, dynamic> restSample() => {
-          'ok': true,
-          'api': 2,
-          'inventory': {
-            'v': 1,
-            'board': 'sh-aabbcc',
-            'name': 'Hall board',
-            'fw': '4.0.0',
-            'chip': 'esp32',
-            'psram': false,
-            'cfgRev': 3,
-            'maxDevices': 24,
-            'rooms': [
-              {'id': 'room1', 'name': 'Hall', 'rev': 1},
-              {'id': 'room2', 'name': 'Bedroom', 'rev': 2},
-            ],
-            'devices': [
-              {'id': 'light', 'name': 'Main Light', 'type': 'switch', 'group': 'Lighting', 'icon': 'light', 'room': 'room1', 'watts': 12, 'enabled': true, 'remote': true, 'pin': 23},
-              {'id': 'door', 'name': 'Door', 'type': 'lock', 'group': 'Security', 'icon': 'lock', 'room': 'room1', 'remote': false, 'pin': 21},
-              {'id': 'fan', 'name': 'Fan', 'type': 'switch', 'icon': 'fan', 'room': 'room2', 'pin': 22, 'fault': 'flash'},
-              {'id': '', 'name': 'broken entry without id'},
-            ],
-            'scenes': [
-              {'id': 'alloff', 'name': 'All off'},
-            ],
-            'counts': {'schedules': 1, 'automations': 0},
-            'pins': {
-              'out': [13, 22, 23],
-              'in': [34],
-            },
+      'ok': true,
+      'api': 2,
+      'inventory': {
+        'v': 1,
+        'board': 'sh-aabbcc',
+        'name': 'Hall board',
+        'fw': '4.0.0',
+        'chip': 'esp32',
+        'psram': false,
+        'cfgRev': 3,
+        'maxDevices': 24,
+        'rooms': [
+          {'id': 'room1', 'name': 'Hall', 'rev': 1},
+          {'id': 'room2', 'name': 'Bedroom', 'rev': 2},
+        ],
+        'devices': [
+          {
+            'id': 'light',
+            'name': 'Main Light',
+            'type': 'switch',
+            'group': 'Lighting',
+            'icon': 'light',
+            'room': 'room1',
+            'watts': 12,
+            'enabled': true,
+            'remote': true,
+            'pin': 23,
           },
-          'state': {
-            'v': 1,
-            'seq': 5,
-            'ts': 0,
-            'up': 120,
-            'rssi': -52,
-            'ip': '192.168.1.37',
-            'dnd': false,
-            'temp': 22.5,
-            'powerW': 12.0,
-            'cloud': 'disabled',
-            'd': {
-              'light': {'on': true, 'wh': 1.5},
-              'door': {'on': true},
-            },
+          {
+            'id': 'door',
+            'name': 'Door',
+            'type': 'lock',
+            'group': 'Security',
+            'icon': 'lock',
+            'room': 'room1',
+            'remote': false,
+            'pin': 21,
           },
-          'wifi': {'mode': 'station', 'ssid': 'Home', 'apSsid': ''},
-        };
+          {
+            'id': 'fan',
+            'name': 'Fan',
+            'type': 'switch',
+            'icon': 'fan',
+            'room': 'room2',
+            'pin': 22,
+            'fault': 'flash',
+          },
+          {'id': '', 'name': 'broken entry without id'},
+        ],
+        'scenes': [
+          {'id': 'alloff', 'name': 'All off'},
+        ],
+        'counts': {'schedules': 1, 'automations': 0},
+        'pins': {
+          'out': [13, 22, 23],
+          'in': [34],
+        },
+      },
+      'state': {
+        'v': 1,
+        'seq': 5,
+        'ts': 0,
+        'up': 120,
+        'rssi': -52,
+        'ip': '192.168.1.37',
+        'dnd': false,
+        'temp': 22.5,
+        'powerW': 12.0,
+        'cloud': 'disabled',
+        'd': {
+          'light': {'on': true, 'wh': 1.5},
+          'door': {'on': true},
+        },
+      },
+      'wifi': {'mode': 'station', 'ssid': 'Home', 'apSsid': ''},
+    };
 
     test('parses the board, rooms, devices and live values', () {
       final st = esp32StateFromRest(restSample());
@@ -149,7 +192,10 @@ void main() {
       expect(st.mode, 'sta');
       expect(st.devices.length, 3); // the entry without an id is skipped
       final light = st.devices.first;
-      expect(light.id, 'sh-aabbcc/light'); // dashboard ids are "<board>/<device>"
+      expect(
+        light.id,
+        'sh-aabbcc/light',
+      ); // dashboard ids are "<board>/<device>"
       expect(light.rawId, 'light');
       expect(light.on, isTrue);
       expect(light.watts, 12);
@@ -168,18 +214,25 @@ void main() {
       expect(door.controllable, isTrue);
       expect(door.on, isTrue);
       expect(door.remoteAllowed, isFalse);
-      expect(st.devices[2].available, isFalse); // pin fault: shown, but never presented as usable
+      expect(
+        st.devices[2].available,
+        isFalse,
+      ); // pin fault: shown, but never presented as usable
       expect(st.devices.first.available, isTrue);
     });
 
     test('withDevice flips only the chosen device', () {
-      final st = esp32StateFromRest(restSample()).withDevice('sh-aabbcc/light', on: false);
+      final st = esp32StateFromRest(restSample())
+          .withDevice('sh-aabbcc/light', on: false);
       expect(st.devices.first.on, isFalse);
       expect(st.devices[1].on, isTrue);
     });
 
     test('documents that are not firmware 4.x answers are rejected', () {
-      expect(() => esp32StateFromRest(<String, dynamic>{}), throwsFormatException);
+      expect(
+        () => esp32StateFromRest(<String, dynamic>{}),
+        throwsFormatException,
+      );
       expect(
         () => esp32StateFromRest({
           'inventory': {'v': 2, 'board': 'sh-aabbcc'},
@@ -197,25 +250,44 @@ void main() {
     });
   });
 
-
   group('voice commands', () {
     const devices = [
       Esp32Device(
-          id: 'light', name: 'Main Light', type: 'switch', group: 'Lighting',
-          icon: 'light', room: 0, on: false),
+        id: 'light',
+        name: 'Main Light',
+        type: 'switch',
+        group: 'Lighting',
+        icon: 'light',
+        room: 0,
+        on: false,
+      ),
       Esp32Device(
-          id: 'fan', name: 'Ceiling Fan', type: 'switch', group: 'Climate',
-          icon: 'fan', room: 0, on: false),
+        id: 'fan',
+        name: 'Ceiling Fan',
+        type: 'switch',
+        group: 'Climate',
+        icon: 'fan',
+        room: 0,
+        on: false,
+      ),
       Esp32Device(
-          id: 'lock', name: 'Smart Lock', type: 'lock', group: 'Security',
-          icon: 'lock', room: 0, on: true),
+        id: 'lock',
+        name: 'Smart Lock',
+        type: 'lock',
+        group: 'Security',
+        icon: 'lock',
+        room: 0,
+        on: true,
+      ),
     ];
 
     test('English and Hindi device commands', () {
       expect(parseVoice('light on', devices)?.set, {'light': true});
       expect(parseVoice('पंखा बंद करो', devices)?.set, {'fan': false});
-      expect(parseVoice('light and fan off', devices)?.set,
-          {'light': false, 'fan': false});
+      expect(parseVoice('light and fan off', devices)?.set, {
+        'light': false,
+        'fan': false,
+      });
     });
 
     test('scenes', () {
@@ -266,7 +338,6 @@ void main() {
       expect(wifiModeOf(null), 'offline');
     });
 
-
     test('Wi-Fi scan and status answers parse', () {
       final scan = WifiScan.fromJson({
         'scanning': false,
@@ -308,31 +379,46 @@ void main() {
     test('a device called by its own name is the only one switched', () {
       const devices = [
         Esp32Device(
-            id: 'd1', name: 'Bulb 1', type: 'switch', group: 'Lighting',
-            icon: 'light', room: 0, on: false),
+          id: 'd1',
+          name: 'Bulb 1',
+          type: 'switch',
+          group: 'Lighting',
+          icon: 'light',
+          room: 0,
+          on: false,
+        ),
         Esp32Device(
-            id: 'd2', name: 'Bulb 2', type: 'switch', group: 'Lighting',
-            icon: 'light', room: 0, on: false),
+          id: 'd2',
+          name: 'Bulb 2',
+          type: 'switch',
+          group: 'Lighting',
+          icon: 'light',
+          room: 0,
+          on: false,
+        ),
       ];
       expect(parseVoice('bulb 2 on', devices)?.set, {'d2': true});
       expect(parseVoice('light on', devices)?.set, {'d1': true, 'd2': true});
     });
 
-    test('the active ESP32 address can be changed and the setup address added', () async {
-      TestWidgetsFlutterBinding.ensureInitialized();
-      SharedPreferences.setMockInitialValues(<String, Object>{});
-      final controller = await SettingsController.load();
-      await controller.setActiveUrl('http://10.0.0.77/');
-      expect(controller.value.activeUrl, 'http://10.0.0.77/');
-      expect(controller.value.devices.length, 1);
+    test(
+      'the active ESP32 address can be changed and the setup address added',
+      () async {
+        TestWidgetsFlutterBinding.ensureInitialized();
+        SharedPreferences.setMockInitialValues(<String, Object>{});
+        final controller = await SettingsController.load();
+        await controller.setActiveUrl('http://10.0.0.77/');
+        expect(controller.value.activeUrl, 'http://10.0.0.77/');
+        expect(controller.value.devices.length, 1);
 
-      await controller.activateSetupDevice();
-      expect(controller.value.devices.length, 2);
-      expect(controller.value.activeUrl, setupEsp32Url);
+        await controller.activateSetupDevice();
+        expect(controller.value.devices.length, 2);
+        expect(controller.value.activeUrl, setupEsp32Url);
 
-      // asking again selects the same entry instead of adding another one
-      await controller.activateSetupDevice();
-      expect(controller.value.devices.length, 2);
-    });
+        // asking again selects the same entry instead of adding another one
+        await controller.activateSetupDevice();
+        expect(controller.value.devices.length, 2);
+      },
+    );
   });
 }

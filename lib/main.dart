@@ -25,15 +25,33 @@ Future<void> main() async {
 
   // Settings are read once before the first frame, so the board address is known immediately.
   final controller = await SettingsController.load();
-  final cache = SnapshotCache(await SharedPreferences.getInstance()); // already in memory: instant
+  final cache = SnapshotCache(
+    await SharedPreferences.getInstance(),
+  ); // already in memory: instant
 
   // Everything else is created synchronously and cheaply; nothing here waits for the network.
-  final local = Esp32Controller(controller, store); // loads its token and polls asynchronously
+  final local = Esp32Controller(
+    controller,
+    store,
+  ); // loads its token and polls asynchronously
   final mqtt = MqttService(transportFactory: MqttClientTransport.new);
   // The controller starts from the last known state of the home (marked "not live"), so the dashboard
   // is filled on the very first frame instead of showing a spinner until a board or the broker answers.
-  final home = HomeController(settings: controller, mqtt: mqtt, local: local, cache: cache);
-  runApp(SmartHomeApp(controller: controller, store: store, local: local, mqtt: mqtt, home: home));
+  final home = HomeController(
+    settings: controller,
+    mqtt: mqtt,
+    local: local,
+    cache: cache,
+  );
+  runApp(
+    SmartHomeApp(
+      controller: controller,
+      store: store,
+      local: local,
+      mqtt: mqtt,
+      home: home,
+    ),
+  );
 
   // The cloud connection starts after the first frame, so the TLS handshake never delays the UI.
   unawaited(() async {

@@ -1,4 +1,5 @@
 import 'package:multicast_dns/multicast_dns.dart';
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -50,8 +51,10 @@ class ApiResult<T> {
 /// Remote access uses MQTT over verified TLS instead.)
 class BoardHttp {
   BoardHttp({required this.baseUrl, this.token, HttpClient? client})
-      : _http = client ?? (HttpClient()..connectionTimeout = const Duration(seconds: 2)),
-        _ownsClient = client == null;
+    : _http =
+          client ??
+          (HttpClient()..connectionTimeout = const Duration(seconds: 2)),
+      _ownsClient = client == null;
 
   final String baseUrl;
   final String? token;
@@ -69,20 +72,31 @@ class BoardHttp {
     Map<String, dynamic>? body,
     bool auth = true,
   }) async {
-    if (auth && (token == null || token!.isEmpty)) throw ApiException(ApiErrorKind.auth, 'no_token');
+    if (auth && (token == null || token!.isEmpty)) {
+      throw ApiException(ApiErrorKind.auth, 'no_token');
+    }
     try {
       final uri = Uri.parse(baseUrl).replace(path: '/api/v2/$path');
-      final req = await _http.openUrl(method, uri).timeout(const Duration(seconds: 3));
-      if (auth) req.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      final req = await _http
+          .openUrl(method, uri)
+          .timeout(const Duration(seconds: 3));
+      if (auth) {
+        req.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      }
       req.headers.set(HttpHeaders.acceptHeader, 'application/json');
       if (method != 'GET') {
-        final bytes = utf8.encode(jsonEncode(body ?? const <String, dynamic>{}));
+        final bytes = utf8.encode(
+          jsonEncode(body ?? const <String, dynamic>{}),
+        );
         req.headers.contentType = ContentType.json;
         req.contentLength = bytes.length;
         req.add(bytes);
       }
       final res = await req.close().timeout(const Duration(seconds: 4));
-      final text = await res.transform(utf8.decoder).join().timeout(const Duration(seconds: 4));
+      final text = await res
+          .transform(utf8.decoder)
+          .join()
+          .timeout(const Duration(seconds: 4));
 
       Map<String, dynamic>? json;
       try {
@@ -95,14 +109,21 @@ class BoardHttp {
       final code = res.statusCode;
 
       if (code == 401) throw ApiException(ApiErrorKind.auth, error);
-      if (code == 403 && error == 'not_claimed') throw ApiException(ApiErrorKind.notClaimed, error);
+      if (code == 403 && error == 'not_claimed') {
+        throw ApiException(ApiErrorKind.notClaimed, error);
+      }
       if (code == 429) throw ApiException(ApiErrorKind.rateLimited, error);
       // A web page / 404 instead of JSON: the board still runs firmware 3.x (no /api/v2).
-      if (json == null && (code == 404 || code == 200)) throw ApiException(ApiErrorKind.firmware);
-      if (code == 404 && (error == 'not found' || error == 'not_found_or_wrong_method')) {
+      if (json == null && (code == 404 || code == 200)) {
+        throw ApiException(ApiErrorKind.firmware);
+      }
+      if (code == 404 &&
+          (error == 'not found' || error == 'not_found_or_wrong_method')) {
         throw ApiException(ApiErrorKind.firmware, error);
       }
-      if (code < 200 || code >= 300) throw ApiException(ApiErrorKind.server, error ?? 'HTTP $code');
+      if (code < 200 || code >= 300) {
+        throw ApiException(ApiErrorKind.server, error ?? 'HTTP $code');
+      }
       if (json == null) throw ApiException(ApiErrorKind.firmware);
       return json;
     } on ApiException {
@@ -148,7 +169,14 @@ abstract interface class LocalBoard implements Listenable {
     required String roomId,
     int? watts,
   });
-  Future<String?> updateDevice(String id, {String? name, String? icon, int? pin, String? roomId, int? watts});
+  Future<String?> updateDevice(
+    String id, {
+    String? name,
+    String? icon,
+    int? pin,
+    String? roomId,
+    int? watts,
+  });
   Future<String?> deleteDevice(String id);
   Future<String?> upsertRoom(RoomInfo room);
   Future<String?> deleteRoom(RoomInfo room);
@@ -163,22 +191,27 @@ abstract interface class LocalBoard implements Listenable {
 ///
 /// Remote/multi-board use goes through MqttService + HomeController; this controller is the
 /// immediate, no-internet-needed path and the one used for hardware setup (pins, Wi-Fi, claiming).
-class Esp32Controller extends ChangeNotifier with WidgetsBindingObserver implements LocalBoard {
+class Esp32Controller extends ChangeNotifier
+    with WidgetsBindingObserver
+    implements LocalBoard {
   Esp32Controller(this._settings, this._store) {
     _applied = _settings.value;
     _settings.addListener(_onSettings);
     WidgetsBinding.instance.addObserver(this);
-    unawaited(_loadToken().then((_) {
-      if (_disposed) return;
-      _startTimer();
-      refresh();
-    }));
+    unawaited(
+      _loadToken().then((_) {
+        if (_disposed) return;
+        _startTimer();
+        refresh();
+      }),
+    );
   }
 
   final SettingsController _settings;
   final SecureStore _store;
   late AppSettings _applied;
-  final HttpClient _client = HttpClient()..connectionTimeout = const Duration(seconds: 2);
+  final HttpClient _client = HttpClient()
+    ..connectionTimeout = const Duration(seconds: 2);
 
   Timer? _timer;
   bool _refreshing = false;
@@ -257,14 +290,19 @@ class Esp32Controller extends ChangeNotifier with WidgetsBindingObserver impleme
 
   void _startTimer() {
     _timer?.cancel();
-    _timer = Timer.periodic(Duration(seconds: _settings.value.pollSeconds), (_) => refresh());
+    _timer = Timer.periodic(
+      Duration(seconds: _settings.value.pollSeconds),
+      (_) => refresh(),
+    );
   }
 
   void _onSettings() {
     final prev = _applied;
     final next = _settings.value;
     _applied = next;
-    final boardChanged = prev.activeUrl != next.activeUrl || prev.device.tokenKey != next.device.tokenKey;
+    final boardChanged =
+        prev.activeUrl != next.activeUrl ||
+        prev.device.tokenKey != next.device.tokenKey;
     if (boardChanged) {
       _state = null;
       _inventory = null;
@@ -318,7 +356,9 @@ class Esp32Controller extends ChangeNotifier with WidgetsBindingObserver impleme
         _online = true;
         _failures = 0;
         _error = null;
-        if (_settings.value.device.boardId.isEmpty && next.board.isNotEmpty) unawaited(_adoptBoardId(next.board));
+        if (_settings.value.device.boardId.isEmpty && next.board.isNotEmpty) {
+          unawaited(_adoptBoardId(next.board));
+        }
       }
     } catch (e) {
       if (urlAtStart == _settings.value.activeUrl) {
@@ -360,7 +400,9 @@ class Esp32Controller extends ChangeNotifier with WidgetsBindingObserver impleme
   void _recordSample(Esp32State s) {
     final now = DateTime.now();
     final last = _lastSample;
-    if (last != null && now.difference(last) < const Duration(seconds: 15)) return;
+    if (last != null && now.difference(last) < const Duration(seconds: 15)) {
+      return;
+    }
     _lastSample = now;
     _samples.add({
       for (final d in s.devices)
@@ -376,13 +418,19 @@ class Esp32Controller extends ChangeNotifier with WidgetsBindingObserver impleme
   /// Returns null on success, otherwise a message that can be shown to the user.
   @override
   Future<String?> setDevice(String id, bool on) {
-    final previous = _state?.devices.where((d) => d.id == id).map((d) => d.on).firstOrNull;
+    final previous = _state?.devices
+        .where((d) => d.id == id)
+        .map((d) => d.on)
+        .firstOrNull;
     return _write(
       'set',
       {'id': _raw(id), 'on': on},
       busyKey: id,
       optimistic: (s) => s.withDevice(id, on: on),
-      revert: (s) => s.withDevice(id, on: previous ?? !on), // the real previous value, not just "!on"
+      revert: (s) => s.withDevice(
+        id,
+        on: previous ?? !on,
+      ), // the real previous value, not just "!on"
     );
   }
 
@@ -399,7 +447,8 @@ class Esp32Controller extends ChangeNotifier with WidgetsBindingObserver impleme
   }
 
   @override
-  Future<String?> runScene(String id) => _write('scene', {'scene': id}, busyKey: 'scene:$id');
+  Future<String?> runScene(String id) =>
+      _write('scene', {'scene': id}, busyKey: 'scene:$id');
 
   // ------------------------------------------------------- device list
   @override
@@ -409,12 +458,13 @@ class Esp32Controller extends ChangeNotifier with WidgetsBindingObserver impleme
     required int pin,
     required String roomId,
     int? watts,
-  }) =>
-      _write(
-        'device/add',
-        {'name': name, 'icon': icon, 'pin': pin, 'room': roomId, 'watts': ?watts},
-        busyKey: 'device:add',
-      );
+  }) => _write('device/add', {
+    'name': name,
+    'icon': icon,
+    'pin': pin,
+    'room': roomId,
+    'watts': ?watts,
+  }, busyKey: 'device:add');
 
   @override
   Future<String?> updateDevice(
@@ -424,37 +474,32 @@ class Esp32Controller extends ChangeNotifier with WidgetsBindingObserver impleme
     int? pin,
     String? roomId,
     int? watts,
-  }) =>
-      _write(
-        'device/update',
-        {
-          'id': _raw(id),
-          'name': ?name,
-          'icon': ?icon,
-          'pin': ?pin,
-          'room': ?roomId,
-          'watts': ?watts,
-        },
-        busyKey: id,
-      );
+  }) => _write('device/update', {
+    'id': _raw(id),
+    'name': ?name,
+    'icon': ?icon,
+    'pin': ?pin,
+    'room': ?roomId,
+    'watts': ?watts,
+  }, busyKey: id);
 
   @override
-  Future<String?> deleteDevice(String id) => _write('device/delete', {'id': _raw(id)}, busyKey: id);
+  Future<String?> deleteDevice(String id) =>
+      _write('device/delete', {'id': _raw(id)}, busyKey: id);
 
   // ---------------------------------------------------------------- rooms
   @override
-  Future<String?> upsertRoom(RoomInfo room) => _write(
-        'room/upsert',
-        {'id': room.id, 'name': room.name, 'rev': room.rev},
-        busyKey: 'room:${room.id}',
-      );
+  Future<String?> upsertRoom(RoomInfo room) => _write('room/upsert', {
+    'id': room.id,
+    'name': room.name,
+    'rev': room.rev,
+  }, busyKey: 'room:${room.id}');
 
   @override
-  Future<String?> deleteRoom(RoomInfo room) => _write(
-        'room/delete',
-        {'id': room.id, 'rev': room.rev},
-        busyKey: 'room:${room.id}',
-      );
+  Future<String?> deleteRoom(RoomInfo room) => _write('room/delete', {
+    'id': room.id,
+    'rev': room.rev,
+  }, busyKey: 'room:${room.id}');
 
   // --------------------------------------------------------------- Wi-Fi
   // These talk to the board directly (not through the polled state).
@@ -486,7 +531,11 @@ class Esp32Controller extends ChangeNotifier with WidgetsBindingObserver impleme
   @override
   Future<String?> wifiConnect(String ssid, String password) async {
     try {
-      final json = await _call('POST', 'wifi/connect', body: {'ssid': ssid, 'password': password});
+      final json = await _call(
+        'POST',
+        'wifi/connect',
+        body: {'ssid': ssid, 'password': password},
+      );
       if (json['ok'] == false) return _tr.boardError(json['error']?.toString());
       return null;
     } catch (e) {
@@ -524,7 +573,9 @@ class Esp32Controller extends ChangeNotifier with WidgetsBindingObserver impleme
     notifyListeners();
     try {
       final json = await _call('POST', name, body: body);
-      if (json['ok'] == false) throw ApiException(ApiErrorKind.server, json['error']?.toString());
+      if (json['ok'] == false) {
+        throw ApiException(ApiErrorKind.server, json['error']?.toString());
+      }
       _online = true;
       _failures = 0;
       _error = null;
@@ -538,7 +589,9 @@ class Esp32Controller extends ChangeNotifier with WidgetsBindingObserver impleme
       _lastWrite = DateTime.now();
       if (!_disposed) notifyListeners();
       // Re-read the real state shortly after, so the UI always converges.
-      unawaited(Future<void>.delayed(const Duration(milliseconds: 300), refresh));
+      unawaited(
+        Future<void>.delayed(const Duration(milliseconds: 300), refresh),
+      );
     }
   }
 
@@ -551,7 +604,9 @@ class Esp32Controller extends ChangeNotifier with WidgetsBindingObserver impleme
     found ??= await _scanSubnet(saved);
     if (found != null && found != saved) {
       final s = _settings.value;
-      final updated = [for (final d in s.devices) d.url == saved ? d.copyWith(url: found) : d];
+      final updated = [
+        for (final d in s.devices) d.url == saved ? d.copyWith(url: found) : d,
+      ];
       await _settings.update(s.copyWith(devices: updated));
       return found;
     }
@@ -564,10 +619,13 @@ class Esp32Controller extends ChangeNotifier with WidgetsBindingObserver impleme
   // It is used only to find which IP is really a Smart Home board.
   Future<bool> _isBoard(String url) async {
     try {
-      final res = await BoardHttp(baseUrl: url, token: null, client: _client)
-          .call('GET', '/api/v2/info')
-          .timeout(const Duration(seconds: 2));
-      return res['board'] == 'sh-282160' || (res['board'] as String?)?.startsWith('sh-') == true;
+      final res = await BoardHttp(
+        baseUrl: url,
+        token: null,
+        client: _client,
+      ).call('GET', '/api/v2/info').timeout(const Duration(seconds: 2));
+      return res['board'] == 'sh-282160' ||
+          (res['board'] as String?)?.startsWith('sh-') == true;
     } catch (_) {
       return false;
     }
@@ -592,7 +650,11 @@ class Esp32Controller extends ChangeNotifier with WidgetsBindingObserver impleme
 
   Future<bool> _reachable(String url) async {
     try {
-      await BoardHttp(baseUrl: url, token: _token, client: _client).call('GET', '/api/v2/state').timeout(const Duration(seconds: 4));
+      await BoardHttp(
+        baseUrl: url,
+        token: _token,
+        client: _client,
+      ).call('GET', '/api/v2/state').timeout(const Duration(seconds: 4));
       return true;
     } catch (_) {
       return false;
@@ -600,7 +662,10 @@ class Esp32Controller extends ChangeNotifier with WidgetsBindingObserver impleme
   }
 
   Future<String?> _discoverByMdns() {
-    return _discoverByMdnsInner().timeout(const Duration(seconds: 4), onTimeout: () => null);
+    return _discoverByMdnsInner().timeout(
+      const Duration(seconds: 4),
+      onTimeout: () => null,
+    );
   }
 
   Future<String?> _discoverByMdnsInner() async {
@@ -608,7 +673,8 @@ class Esp32Controller extends ChangeNotifier with WidgetsBindingObserver impleme
     try {
       await client.start();
       await for (final ip in client.lookup<IPAddressResourceRecord>(
-          ResourceRecordQuery.addressIPv4('sh-282160.local'))) {
+        ResourceRecordQuery.addressIPv4('sh-282160.local'),
+      )) {
         return 'http://${ip.address.address}/';
       }
       return null;
@@ -619,13 +685,18 @@ class Esp32Controller extends ChangeNotifier with WidgetsBindingObserver impleme
     }
   }
 
-  Future<Map<String, dynamic>> _call(String method, String path, {Map<String, dynamic>? body}) async {
+  Future<Map<String, dynamic>> _call(
+    String method,
+    String path, {
+    Map<String, dynamic>? body,
+  }) async {
     final url = await _resolveUrl();
     final http = BoardHttp(baseUrl: url, token: _token, client: _client);
     return http.call(method, path, body: body);
   }
 
-  String _friendly(Object e) => e is ApiException ? describeApiException(_tr, e) : _tr.errNetwork;
+  String _friendly(Object e) =>
+      e is ApiException ? describeApiException(_tr, e) : _tr.errNetwork;
 }
 
 /// User-readable text for an API failure (shared by the dashboard path and the Boards screen).
@@ -635,7 +706,8 @@ String describeApiException(Tr tr, ApiException e) {
     ApiErrorKind.auth => tr.errAuth,
     ApiErrorKind.notClaimed => tr.errNotClaimed,
     ApiErrorKind.rateLimited => tr.errRateLimited,
-    ApiErrorKind.server => detail == null ? tr.errServer : tr.boardError(detail),
+    ApiErrorKind.server =>
+      detail == null ? tr.errServer : tr.boardError(detail),
     ApiErrorKind.firmware => tr.errFirmware,
     ApiErrorKind.network => tr.errNetwork,
   };

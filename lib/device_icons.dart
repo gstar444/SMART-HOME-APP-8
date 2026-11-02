@@ -56,14 +56,14 @@ GlyphBuilder glyphFor(String key, bool on) {
       return _iconGlyph(on ? Icons.lock : Icons.lock_open);
     case 'pir':
       return (color, size) => Text(
-            'PIR',
-            style: TextStyle(
-              fontSize: size * 0.5,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.5,
-              color: color,
-            ),
-          );
+        'PIR',
+        style: TextStyle(
+          fontSize: size * 0.5,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.5,
+          color: color,
+        ),
+      );
     default:
       return _iconGlyph(Icons.power);
   }

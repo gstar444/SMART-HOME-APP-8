@@ -46,7 +46,12 @@ class _BoardsPageState extends State<BoardsPage> {
     try {
       message = await job();
     } on ApiException catch (e) {
-      message = mounted ? describeApiException(Tr.of(context.read<SettingsController>().value), e) : null;
+      message = mounted
+          ? describeApiException(
+              Tr.of(context.read<SettingsController>().value),
+              e,
+            )
+          : null;
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -121,7 +126,11 @@ class _BoardsPageState extends State<BoardsPage> {
   ) async {
     final s = settings.value;
     final list = [...s.devices];
-    final entry = Device(name: name.isEmpty ? board : name, url: url, boardId: board);
+    final entry = Device(
+      name: name.isEmpty ? board : name,
+      url: url,
+      boardId: board,
+    );
     var i = list.indexWhere((d) => d.boardId == board || d.url == url);
     if (i >= 0) {
       list[i] = entry;
@@ -146,7 +155,12 @@ class _BoardsPageState extends State<BoardsPage> {
       if (info['claimed'] == true) return tr.boardAlreadyClaimed;
 
       final token = SecureStore.generateToken();
-      await http.call('POST', 'claim', body: {'code': code, 'token': token}, auth: false);
+      await http.call(
+        'POST',
+        'claim',
+        body: {'code': code, 'token': token},
+        auth: false,
+      );
       await store.setBoardToken(board, token);
       await _registerBoard(settings, esp, board, url, name);
       return tr.claimDone;
@@ -157,7 +171,12 @@ class _BoardsPageState extends State<BoardsPage> {
 
   /// Second phone: the board is already claimed, so no claim code is needed. The token is verified
   /// against the board BEFORE anything is saved, so a mistyped token never ends up stored.
-  Future<String?> _connectExisting(Tr tr, String url, String token, String name) async {
+  Future<String?> _connectExisting(
+    Tr tr,
+    String url,
+    String token,
+    String name,
+  ) async {
     final store = context.read<SecureStore>();
     final settings = context.read<SettingsController>();
     final esp = context.read<Esp32Controller>();
@@ -167,7 +186,10 @@ class _BoardsPageState extends State<BoardsPage> {
       final board = info['board'];
       if (board is! String || !validBoardId(board)) return tr.errFirmware;
       if (info['claimed'] != true) return tr.boardNotClaimedYet;
-      await http.call('GET', 'state'); // 401 -> "token rejected" (ApiException is shown by _run)
+      await http.call(
+        'GET',
+        'state',
+      ); // 401 -> "token rejected" (ApiException is shown by _run)
       await store.setBoardToken(board, token);
       await _registerBoard(settings, esp, board, url, name);
       return tr.boardAdded;
@@ -179,7 +201,9 @@ class _BoardsPageState extends State<BoardsPage> {
   // ---------------------------------------------------------- per-board work
   Future<BoardHttp?> _httpFor(Device d) async {
     final token = await context.read<SecureStore>().boardToken(d.tokenKey);
-    if (!mounted) return null; // the screen was closed while the token was being read
+    if (!mounted) {
+      return null; // the screen was closed while the token was being read
+    }
     if (token == null) {
       _snack(Tr.of(context.read<SettingsController>().value).errAuth);
       return null;
@@ -253,7 +277,12 @@ class _BoardsPageState extends State<BoardsPage> {
     }
     await showDialog<void>(
       context: context,
-      builder: (_) => _TokenDialog(tr: tr, title: tr.showToken, token: token, note: tr.tokenShareNote),
+      builder: (_) => _TokenDialog(
+        tr: tr,
+        title: tr.showToken,
+        token: token,
+        note: tr.tokenShareNote,
+      ),
     );
   }
 
@@ -266,7 +295,8 @@ class _BoardsPageState extends State<BoardsPage> {
     final d = settings.value.devices[index];
     final fresh = await showDialog<String>(
       context: context,
-      builder: (_) => _TokenEditDialog(tr: tr, initial: SecureStore.generateToken()),
+      builder: (_) =>
+          _TokenEditDialog(tr: tr, initial: SecureStore.generateToken()),
     );
     if (fresh == null) return;
     var changed = false;
@@ -275,7 +305,10 @@ class _BoardsPageState extends State<BoardsPage> {
       if (http == null) return null;
       try {
         await http.call('POST', 'auth/rotate', body: {'token': fresh});
-        await store.setBoardToken(d.tokenKey, fresh); // the board already stopped accepting the old one
+        await store.setBoardToken(
+          d.tokenKey,
+          fresh,
+        ); // the board already stopped accepting the old one
         changed = true;
         if (index == settings.value.activeDevice) await esp.reloadToken();
         return tr.tokenChanged;
@@ -286,7 +319,12 @@ class _BoardsPageState extends State<BoardsPage> {
     if (!changed || !mounted) return;
     await showDialog<void>(
       context: context,
-      builder: (_) => _TokenDialog(tr: tr, title: tr.tokenChangedTitle, token: fresh, note: tr.tokenChangedNote),
+      builder: (_) => _TokenDialog(
+        tr: tr,
+        title: tr.tokenChangedTitle,
+        token: fresh,
+        note: tr.tokenChangedNote,
+      ),
     );
   }
 
@@ -304,7 +342,10 @@ class _BoardsPageState extends State<BoardsPage> {
         cancelLabel: tr.cancel,
         fields: [
           _Field(tr.cloudHost, saved?.host ?? '', keyboard: TextInputType.url),
-          _Field(tr.cloudUsername, d.boardId.isEmpty ? '' : 'board-${d.boardId}'),
+          _Field(
+            tr.cloudUsername,
+            d.boardId.isEmpty ? '' : 'board-${d.boardId}',
+          ),
           _Field(tr.cloudPassword, '', obscure: true),
           _Field(tr.cloudHomeId, saved?.homeId ?? 'home'),
         ],
@@ -328,15 +369,19 @@ class _BoardsPageState extends State<BoardsPage> {
       final http = await _httpFor(d);
       if (http == null) return null;
       try {
-        await http.call('POST', 'config/mqtt', body: {
-          'enabled': true,
-          'provider': cfg.provider.name,
-          'host': cfg.host,
-          'port': cfg.port,
-          'username': cfg.username,
-          'password': cfg.password,
-          'homeId': cfg.homeId,
-        });
+        await http.call(
+          'POST',
+          'config/mqtt',
+          body: {
+            'enabled': true,
+            'provider': cfg.provider.name,
+            'host': cfg.host,
+            'port': cfg.port,
+            'username': cfg.username,
+            'password': cfg.password,
+            'homeId': cfg.homeId,
+          },
+        );
         return tr.cloudLoginSent;
       } finally {
         http.close();
@@ -365,10 +410,14 @@ class _BoardsPageState extends State<BoardsPage> {
       final http = await _httpFor(d);
       if (http == null) return null;
       try {
-        await http.call('POST', 'config/board', body: {
-          if (v[0].trim().isNotEmpty) 'name': v[0].trim(),
-          if (v[1].trim().isNotEmpty) 'tz': v[1].trim(),
-        });
+        await http.call(
+          'POST',
+          'config/board',
+          body: {
+            if (v[0].trim().isNotEmpty) 'name': v[0].trim(),
+            if (v[1].trim().isNotEmpty) 'tz': v[1].trim(),
+          },
+        );
         return tr.saved;
       } finally {
         http.close();
@@ -387,8 +436,14 @@ class _BoardsPageState extends State<BoardsPage> {
         title: Text(tr.removeBoardTitle),
         content: Text(tr.removeBoardBody),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr.cancel)),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(tr.remove)),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(tr.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(tr.remove),
+          ),
         ],
       ),
     );
@@ -397,7 +452,9 @@ class _BoardsPageState extends State<BoardsPage> {
     if (d.boardId.isNotEmpty) await home.forgetCached(d.boardId);
     final s = settings.value;
     final list = [...s.devices]..removeAt(index);
-    final active = list.isEmpty ? 0 : s.activeDevice.clamp(0, list.length - 1).toInt();
+    final active = list.isEmpty
+        ? 0
+        : s.activeDevice.clamp(0, list.length - 1).toInt();
     await settings.update(s.copyWith(devices: list, activeDevice: active));
   }
 
@@ -424,14 +481,25 @@ class _BoardsPageState extends State<BoardsPage> {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                child: Text(tr.boardsHelp, style: Theme.of(context).textTheme.bodySmall),
+                child: Text(
+                  tr.boardsHelp,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ),
               if (entries.isEmpty)
-                Padding(padding: const EdgeInsets.all(24), child: Center(child: Text(tr.noBoardsYet))),
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Center(child: Text(tr.noBoardsYet)),
+                ),
               for (final e in entries) _tile(context, tr, s, e),
             ],
           ),
-          if (_busy) const Positioned.fill(child: IgnorePointer(child: Center(child: CircularProgressIndicator()))),
+          if (_busy)
+            const Positioned.fill(
+              child: IgnorePointer(
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            ),
         ],
       ),
     );
@@ -457,7 +525,10 @@ class _BoardsPageState extends State<BoardsPage> {
     ];
     final index = e.index;
     return ListTile(
-      leading: Icon(isActive ? Icons.radio_button_checked : Icons.developer_board, color: color),
+      leading: Icon(
+        isActive ? Icons.radio_button_checked : Icons.developer_board,
+        color: color,
+      ),
       title: Text(name.isEmpty ? tr.unnamedBoard : name),
       subtitle: Text(lines.join('\n')),
       isThreeLine: lines.length > 2,
@@ -501,7 +572,14 @@ class _BoardsPageState extends State<BoardsPage> {
 
 // ------------------------------------------------------------------ small form dialog
 class _Field {
-  const _Field(this.label, this.initial, {this.hint, this.obscure = false, this.keyboard, this.capitalize = false});
+  const _Field(
+    this.label,
+    this.initial, {
+    this.hint,
+    this.obscure = false,
+    this.keyboard,
+    this.capitalize = false,
+  });
   final String label;
   final String initial;
   final String? hint;
@@ -562,8 +640,13 @@ class _FormDialogState extends State<_FormDialog> {
                 keyboardType: widget.fields[i].keyboard,
                 autocorrect: false,
                 enableSuggestions: false,
-                textCapitalization: widget.fields[i].capitalize ? TextCapitalization.characters : TextCapitalization.none,
-                decoration: InputDecoration(labelText: widget.fields[i].label, hintText: widget.fields[i].hint),
+                textCapitalization: widget.fields[i].capitalize
+                    ? TextCapitalization.characters
+                    : TextCapitalization.none,
+                decoration: InputDecoration(
+                  labelText: widget.fields[i].label,
+                  hintText: widget.fields[i].hint,
+                ),
               ),
               const SizedBox(height: 8),
             ],
@@ -571,9 +654,13 @@ class _FormDialogState extends State<_FormDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text(widget.cancelLabel)),
         TextButton(
-          onPressed: () => Navigator.pop(context, [for (final c in _controllers) c.text]),
+          onPressed: () => Navigator.pop(context),
+          child: Text(widget.cancelLabel),
+        ),
+        TextButton(
+          onPressed: () =>
+              Navigator.pop(context, [for (final c in _controllers) c.text]),
           child: Text(widget.okLabel),
         ),
       ],
@@ -584,7 +671,12 @@ class _FormDialogState extends State<_FormDialog> {
 // ------------------------------------------------------------------ token dialogs
 /// Shows a token in a selectable field with a Copy button.
 class _TokenDialog extends StatefulWidget {
-  const _TokenDialog({required this.tr, required this.title, required this.token, required this.note});
+  const _TokenDialog({
+    required this.tr,
+    required this.title,
+    required this.token,
+    required this.note,
+  });
 
   final Tr tr;
   final String title;
@@ -610,7 +702,10 @@ class _TokenDialogState extends State<_TokenDialog> {
           children: [
             Text(widget.note, style: Theme.of(context).textTheme.bodySmall),
             const SizedBox(height: 12),
-            SelectableText(widget.token, style: const TextStyle(fontFamily: 'monospace', fontSize: 14)),
+            SelectableText(
+              widget.token,
+              style: const TextStyle(fontFamily: 'monospace', fontSize: 14),
+            ),
           ],
         ),
       ),
@@ -623,7 +718,10 @@ class _TokenDialogState extends State<_TokenDialog> {
             if (mounted) setState(() => _copied = true);
           },
         ),
-        TextButton(onPressed: () => Navigator.pop(context), child: Text(tr.close)),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(tr.close),
+        ),
       ],
     );
   }
@@ -641,7 +739,9 @@ class _TokenEditDialog extends StatefulWidget {
 }
 
 class _TokenEditDialogState extends State<_TokenEditDialog> {
-  late final TextEditingController _controller = TextEditingController(text: widget.initial);
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initial,
+  );
   String? _error;
 
   @override
@@ -660,7 +760,10 @@ class _TokenEditDialogState extends State<_TokenEditDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(tr.tokenEditNote, style: Theme.of(context).textTheme.bodySmall),
+            Text(
+              tr.tokenEditNote,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
             const SizedBox(height: 12),
             TextField(
               controller: _controller,
@@ -669,7 +772,10 @@ class _TokenEditDialogState extends State<_TokenEditDialog> {
               minLines: 2,
               maxLines: 4,
               style: const TextStyle(fontFamily: 'monospace', fontSize: 14),
-              decoration: InputDecoration(labelText: tr.accessToken, errorText: _error),
+              decoration: InputDecoration(
+                labelText: tr.accessToken,
+                errorText: _error,
+              ),
             ),
             const SizedBox(height: 8),
             Wrap(
@@ -686,7 +792,9 @@ class _TokenEditDialogState extends State<_TokenEditDialog> {
                 TextButton.icon(
                   icon: const Icon(Icons.copy),
                   label: Text(tr.copy),
-                  onPressed: () => Clipboard.setData(ClipboardData(text: _controller.text.trim())),
+                  onPressed: () => Clipboard.setData(
+                    ClipboardData(text: _controller.text.trim()),
+                  ),
                 ),
               ],
             ),
@@ -694,7 +802,10 @@ class _TokenEditDialogState extends State<_TokenEditDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text(tr.cancel)),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(tr.cancel),
+        ),
         TextButton(
           onPressed: () {
             final v = _controller.text.trim();

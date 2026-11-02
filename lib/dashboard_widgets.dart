@@ -162,8 +162,9 @@ class StatusCard extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 3),
                 Row(
@@ -184,8 +185,9 @@ class StatusCard extends StatelessWidget {
                         subtitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: _muted(context)),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: _muted(context),
+                        ),
                       ),
                     ),
                   ],
@@ -249,7 +251,11 @@ class VoiceButton extends StatelessWidget {
             label,
             maxLines: 2,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 11.5, height: 1.15, color: _muted(context)),
+            style: TextStyle(
+              fontSize: 11.5,
+              height: 1.15,
+              color: _muted(context),
+            ),
           ),
         ],
       ),
@@ -361,10 +367,19 @@ class RoomChip extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(24),
-              color: selected || hovering ? accent.withValues(alpha: 0.2) : Colors.transparent,
-              border: Border.all(color: selected || hovering ? accent : _border(context)),
+              color: selected || hovering
+                  ? accent.withValues(alpha: 0.2)
+                  : Colors.transparent,
+              border: Border.all(
+                color: selected || hovering ? accent : _border(context),
+              ),
               boxShadow: selected
-                  ? [BoxShadow(color: accent.withValues(alpha: 0.35), blurRadius: 14)]
+                  ? [
+                      BoxShadow(
+                        color: accent.withValues(alpha: 0.35),
+                        blurRadius: 14,
+                      ),
+                    ]
                   : null,
             ),
             child: Text(
@@ -372,7 +387,9 @@ class RoomChip extends StatelessWidget {
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                color: selected ? Theme.of(context).colorScheme.onSurface : _muted(context),
+                color: selected
+                    ? Theme.of(context).colorScheme.onSurface
+                    : _muted(context),
               ),
             ),
           ),
@@ -465,7 +482,11 @@ class DeviceTile extends StatelessWidget {
               caption ?? label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: fg),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: fg,
+              ),
             ),
           ),
         ],
@@ -498,8 +519,10 @@ class DeviceTile extends StatelessWidget {
                 color: filled
                     ? null
                     : (active
-                        ? accent.withValues(alpha: 0.12)
-                        : (dark ? Colors.white.withValues(alpha: 0.07) : Colors.white)),
+                          ? accent.withValues(alpha: 0.12)
+                          : (dark
+                                ? Colors.white.withValues(alpha: 0.07)
+                                : Colors.white)),
                 border: Border.all(
                   color: active ? accent : _border(context),
                   width: active ? 1.4 : 1,
@@ -513,14 +536,14 @@ class DeviceTile extends StatelessWidget {
                         ),
                       ]
                     : (dark
-                        ? null
-                        : [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ]),
+                          ? null
+                          : [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ]),
               ),
               child: Material(
                 type: MaterialType.transparency,
@@ -585,7 +608,9 @@ class GroupBox extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(13, 10, 13, 16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        color: dark ? Colors.white.withValues(alpha: 0.035) : Colors.white.withValues(alpha: 0.6),
+        color: dark
+            ? Colors.white.withValues(alpha: 0.035)
+            : Colors.white.withValues(alpha: 0.6),
         border: Border.all(color: _border(context)),
       ),
       child: Column(
@@ -593,7 +618,11 @@ class GroupBox extends StatelessWidget {
         children: [
           Text(
             title,
-            style: TextStyle(fontSize: 13, letterSpacing: 0.8, color: _muted(context)),
+            style: TextStyle(
+              fontSize: 13,
+              letterSpacing: 0.8,
+              color: _muted(context),
+            ),
           ),
           const SizedBox(height: 12),
           child,
@@ -692,13 +721,20 @@ class _GlyphPainter extends CustomPainter {
         canvas.drawCircle(p(0.5, 0.22), s * 0.035, fill);
         for (var r = 0; r < 4; r++) {
           for (var c = 0; c < 3; c++) {
-            canvas.drawCircle(p(0.4 + c * 0.1, 0.42 + r * 0.11), s * 0.024, fill);
+            canvas.drawCircle(
+              p(0.4 + c * 0.1, 0.42 + r * 0.11),
+              s * 0.024,
+              fill,
+            );
           }
         }
         break;
       case 'floorplan':
         final thin = stroke(0.045);
-        canvas.drawRect(Rect.fromLTWH(s * 0.08, s * 0.1, s * 0.84, s * 0.8), thin);
+        canvas.drawRect(
+          Rect.fromLTWH(s * 0.08, s * 0.1, s * 0.84, s * 0.8),
+          thin,
+        );
         canvas.drawLine(p(0.42, 0.1), p(0.42, 0.46), thin);
         canvas.drawLine(p(0.42, 0.62), p(0.42, 0.9), thin);
         canvas.drawLine(p(0.08, 0.5), p(0.3, 0.5), thin);
@@ -709,7 +745,8 @@ class _GlyphPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_GlyphPainter old) => old.kind != kind || old.color != color;
+  bool shouldRepaint(_GlyphPainter old) =>
+      old.kind != kind || old.color != color;
 }
 
 class SectionLabel extends StatelessWidget {
@@ -771,8 +808,9 @@ class EnergyCard extends StatelessWidget {
                   tr.energyTitle(room),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -782,7 +820,10 @@ class EnergyCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: _border(context)),
                 ),
-                child: Text('kWh', style: TextStyle(fontSize: 11, color: muted)),
+                child: Text(
+                  'kWh',
+                  style: TextStyle(fontSize: 11, color: muted),
+                ),
               ),
             ],
           ),
@@ -796,8 +837,9 @@ class EnergyCard extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 tr.smartPlugs,
-                style: theme.textTheme.titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w600),
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),

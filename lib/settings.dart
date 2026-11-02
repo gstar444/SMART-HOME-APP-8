@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const String defaultEsp32Url = 'http://192.168.0.106/';
+
 /// Address of the ESP32's own setup hotspot ("SmartHome-Setup").
 const String setupEsp32Url = 'http://192.168.4.1/';
 // Backwards-compatible constant used by the project's URL smoke test.
@@ -39,16 +40,23 @@ class Device {
   /// Key of this board's access token in secure storage.
   String get tokenKey => boardId.isNotEmpty ? boardId : 'url:$url';
 
-  Device copyWith({String? name, String? url, String? boardId}) =>
-      Device(name: name ?? this.name, url: url ?? this.url, boardId: boardId ?? this.boardId);
+  Device copyWith({String? name, String? url, String? boardId}) => Device(
+    name: name ?? this.name,
+    url: url ?? this.url,
+    boardId: boardId ?? this.boardId,
+  );
 
-  Map<String, dynamic> toJson() => {'name': name, 'url': url, if (boardId.isNotEmpty) 'boardId': boardId};
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'url': url,
+    if (boardId.isNotEmpty) 'boardId': boardId,
+  };
 
   factory Device.fromJson(Map<String, dynamic> json) => Device(
-        name: (json['name'] as String?) ?? 'ESP32',
-        url: (json['url'] as String?) ?? defaultEsp32Url,
-        boardId: (json['boardId'] as String?) ?? '',
-      );
+    name: (json['name'] as String?) ?? 'ESP32',
+    url: (json['url'] as String?) ?? defaultEsp32Url,
+    boardId: (json['boardId'] as String?) ?? '',
+  );
 }
 
 class AppSettings {
@@ -87,6 +95,7 @@ class AppSettings {
   /// Optional camera page/stream (for example an ESP32-CAM), chosen by the user in the app.
   /// Boards no longer supply it: a board must not be able to make the app open arbitrary pages.
   final String cameraUrl;
+
   /// Legacy (app 3.x): room tabs used to live only in the app. Since 4.0 rooms are stored on the
   /// boards and synchronised through MQTT/REST, so the dashboard no longer reads this.
   final List<String> rooms;
@@ -94,7 +103,9 @@ class AppSettings {
   final Map<String, int> order; // device id -> position in its room
 
   Device get device {
-    if (devices.isEmpty) return const Device(name: 'ESP32', url: defaultEsp32Url);
+    if (devices.isEmpty) {
+      return const Device(name: 'ESP32', url: defaultEsp32Url);
+    }
     return devices[activeDevice.clamp(0, devices.length - 1).toInt()];
   }
 
@@ -139,22 +150,22 @@ class AppSettings {
   }
 
   Map<String, dynamic> toJson() => {
-        'title': title,
-        'devices': devices.map((d) => d.toJson()).toList(),
-        'activeDevice': activeDevice,
-        'themeMode': themeMode.index,
-        'accent': accent,
-        'showToolbar': showToolbar,
-        'pageZoom': pageZoom,
-        'autoRefreshSeconds': autoRefreshSeconds,
-        'timeoutSeconds': timeoutSeconds,
-        'javaScript': javaScript,
-        'hindi': hindi,
-        'pollSeconds': pollSeconds,
-        'cameraUrl': cameraUrl,
-        'rooms': rooms,
-        'roomOf': roomOf,
-      };
+    'title': title,
+    'devices': devices.map((d) => d.toJson()).toList(),
+    'activeDevice': activeDevice,
+    'themeMode': themeMode.index,
+    'accent': accent,
+    'showToolbar': showToolbar,
+    'pageZoom': pageZoom,
+    'autoRefreshSeconds': autoRefreshSeconds,
+    'timeoutSeconds': timeoutSeconds,
+    'javaScript': javaScript,
+    'hindi': hindi,
+    'pollSeconds': pollSeconds,
+    'cameraUrl': cameraUrl,
+    'rooms': rooms,
+    'roomOf': roomOf,
+  };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) {
     const d = AppSettings();
@@ -171,33 +182,44 @@ class AppSettings {
           if (r is String && r.trim().isNotEmpty) r,
     ];
     final rawRoomOf = json['roomOf'];
-  final rawOrder = json['order'];
-  final order = <String, int>{
-    if (rawOrder is Map)
-      for (final e in rawOrder.entries)
-        if (e.key is String && e.value is int) e.key as String: e.value as int,
-  };
+    final rawOrder = json['order'];
+    final order = <String, int>{
+      if (rawOrder is Map)
+        for (final e in rawOrder.entries)
+          if (e.key is String && e.value is int)
+            e.key as String: e.value as int,
+    };
     final roomOf = <String, int>{
       if (rawRoomOf is Map)
         for (final e in rawRoomOf.entries)
-          if (e.key is String && e.value is int) e.key as String: e.value as int,
+          if (e.key is String && e.value is int)
+            e.key as String: e.value as int,
     };
     final modeIndex = (json['themeMode'] as int?) ?? d.themeMode.index;
     return AppSettings(
       title: (json['title'] as String?) ?? d.title,
       devices: devices.isEmpty ? d.devices : devices,
       activeDevice: (json['activeDevice'] as int?) ?? 0,
-      themeMode: ThemeMode.values[modeIndex.clamp(0, ThemeMode.values.length - 1).toInt()],
+      themeMode: ThemeMode
+          .values[modeIndex.clamp(0, ThemeMode.values.length - 1).toInt()],
       accent: (json['accent'] as int?) ?? d.accent,
       showToolbar: (json['showToolbar'] as bool?) ?? d.showToolbar,
-      pageZoom: ((json['pageZoom'] as int?) ?? d.pageZoom).clamp(70, 150).toInt(),
-      autoRefreshSeconds: (json['autoRefreshSeconds'] as int?) ?? d.autoRefreshSeconds,
-      timeoutSeconds:
-          ((json['timeoutSeconds'] as int?) ?? d.timeoutSeconds).clamp(5, 120).toInt(),
+      pageZoom: ((json['pageZoom'] as int?) ?? d.pageZoom)
+          .clamp(70, 150)
+          .toInt(),
+      autoRefreshSeconds:
+          (json['autoRefreshSeconds'] as int?) ?? d.autoRefreshSeconds,
+      timeoutSeconds: ((json['timeoutSeconds'] as int?) ?? d.timeoutSeconds)
+          .clamp(5, 120)
+          .toInt(),
       javaScript: (json['javaScript'] as bool?) ?? d.javaScript,
       hindi: (json['hindi'] as bool?) ?? d.hindi,
-      pollSeconds: ((json['pollSeconds'] as int?) ?? d.pollSeconds).clamp(1, 30).toInt(),
-      cameraUrl: _validCameraUrl((json['cameraUrl'] as String?) ?? '') ? (json['cameraUrl'] as String) : '',
+      pollSeconds: ((json['pollSeconds'] as int?) ?? d.pollSeconds)
+          .clamp(1, 30)
+          .toInt(),
+      cameraUrl: _validCameraUrl((json['cameraUrl'] as String?) ?? '')
+          ? (json['cameraUrl'] as String)
+          : '',
       rooms: rooms.isEmpty ? d.rooms : rooms,
       roomOf: roomOf,
       order: order,
@@ -261,10 +283,12 @@ class SettingsController extends ChangeNotifier {
   Future<void> setActiveUrl(String url) {
     final s = _value;
     if (s.devices.isEmpty) {
-      return update(s.copyWith(
-        devices: [Device(name: 'ESP32', url: url)],
-        activeDevice: 0,
-      ));
+      return update(
+        s.copyWith(
+          devices: [Device(name: 'ESP32', url: url)],
+          activeDevice: 0,
+        ),
+      );
     }
     final i = s.activeDevice.clamp(0, s.devices.length - 1).toInt();
     final list = [...s.devices];
@@ -276,12 +300,19 @@ class SettingsController extends ChangeNotifier {
   /// so the app can talk to an ESP32 that has no router connection yet.
   Future<void> activateSetupDevice() {
     final s = _value;
-    final i = s.devices.indexWhere((d) => Uri.tryParse(d.url)?.host == '192.168.4.1');
+    final i = s.devices.indexWhere(
+      (d) => Uri.tryParse(d.url)?.host == '192.168.4.1',
+    );
     if (i >= 0) return update(s.copyWith(activeDevice: i));
-    return update(s.copyWith(
-      devices: [...s.devices, const Device(name: 'ESP32 Setup', url: setupEsp32Url)],
-      activeDevice: s.devices.length,
-    ));
+    return update(
+      s.copyWith(
+        devices: [
+          ...s.devices,
+          const Device(name: 'ESP32 Setup', url: setupEsp32Url),
+        ],
+        activeDevice: s.devices.length,
+      ),
+    );
   }
 }
 
@@ -289,7 +320,9 @@ class SettingsController extends ChangeNotifier {
 bool _validCameraUrl(String v) {
   if (v.isEmpty) return false;
   final u = Uri.tryParse(v);
-  return u != null && (u.scheme == 'http' || u.scheme == 'https') && u.host.isNotEmpty;
+  return u != null &&
+      (u.scheme == 'http' || u.scheme == 'https') &&
+      u.host.isNotEmpty;
 }
 
 /// Same rule for the settings screen (empty = no camera).

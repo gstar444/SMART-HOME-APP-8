@@ -66,14 +66,14 @@ class _CloudSettingsPageState extends State<CloudSettingsPage> {
   }
 
   CloudConfig _current() => CloudConfig(
-        provider: _provider,
-        host: _host.text.trim(),
-        port: int.tryParse(_port.text.trim()) ?? 0,
-        username: _user.text.trim(),
-        password: _pass.text,
-        homeId: _home.text.trim().toLowerCase(),
-        customCaPem: _ca.text.trim(),
-      );
+    provider: _provider,
+    host: _host.text.trim(),
+    port: int.tryParse(_port.text.trim()) ?? 0,
+    username: _user.text.trim(),
+    password: _pass.text,
+    homeId: _home.text.trim().toLowerCase(),
+    customCaPem: _ca.text.trim(),
+  );
 
   void _say(String text, {bool ok = false}) {
     if (!mounted) return;
@@ -118,8 +118,14 @@ class _CloudSettingsPageState extends State<CloudSettingsPage> {
         title: Text(tr.cloudRemoveTitle),
         content: Text(tr.cloudRemoveBody),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr.cancel)),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(tr.cloudRemove)),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(tr.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(tr.cloudRemove),
+          ),
         ],
       ),
     );
@@ -153,21 +159,29 @@ class _CloudSettingsPageState extends State<CloudSettingsPage> {
               children: [
                 _StatusTile(tr: tr, mqtt: mqtt),
                 const SizedBox(height: 8),
-                Text(tr.cloudSecurityNote, style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  tr.cloudSecurityNote,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<CloudProvider>(
                   initialValue: _provider,
                   decoration: InputDecoration(labelText: tr.cloudProvider),
                   items: [
                     for (final p in CloudProvider.values)
-                      DropdownMenuItem(value: p, child: Text(tr.providerName(p))),
+                      DropdownMenuItem(
+                        value: p,
+                        child: Text(tr.providerName(p)),
+                      ),
                   ],
                   onChanged: _busy
                       ? null
                       : (p) => setState(() {
-                            _provider = p ?? _provider;
-                            if (_provider != CloudProvider.custom) _port.text = '8883';
-                          }),
+                          _provider = p ?? _provider;
+                          if (_provider != CloudProvider.custom) {
+                            _port.text = '8883';
+                          }
+                        }),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -175,21 +189,30 @@ class _CloudSettingsPageState extends State<CloudSettingsPage> {
                   enabled: !_busy,
                   keyboardType: TextInputType.url,
                   autocorrect: false,
-                  decoration: InputDecoration(labelText: tr.cloudHost, hintText: 'abc123.s1.eu.hivemq.cloud'),
+                  decoration: InputDecoration(
+                    labelText: tr.cloudHost,
+                    hintText: 'abc123.s1.eu.hivemq.cloud',
+                  ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: _port,
                   enabled: !_busy && isCustom,
                   keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: tr.cloudPort, helperText: isCustom ? null : tr.cloudPortFixed),
+                  decoration: InputDecoration(
+                    labelText: tr.cloudPort,
+                    helperText: isCustom ? null : tr.cloudPortFixed,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: _user,
                   enabled: !_busy,
                   autocorrect: false,
-                  decoration: InputDecoration(labelText: tr.cloudUsername, helperText: tr.cloudUsernameHelp),
+                  decoration: InputDecoration(
+                    labelText: tr.cloudUsername,
+                    helperText: tr.cloudUsernameHelp,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -201,7 +224,9 @@ class _CloudSettingsPageState extends State<CloudSettingsPage> {
                   decoration: InputDecoration(
                     labelText: tr.cloudPassword,
                     suffixIcon: IconButton(
-                      icon: Icon(_showPass ? Icons.visibility_off : Icons.visibility),
+                      icon: Icon(
+                        _showPass ? Icons.visibility_off : Icons.visibility,
+                      ),
                       onPressed: () => setState(() => _showPass = !_showPass),
                     ),
                   ),
@@ -211,7 +236,10 @@ class _CloudSettingsPageState extends State<CloudSettingsPage> {
                   controller: _home,
                   enabled: !_busy,
                   autocorrect: false,
-                  decoration: InputDecoration(labelText: tr.cloudHomeId, helperText: tr.cloudHomeIdHelp),
+                  decoration: InputDecoration(
+                    labelText: tr.cloudHomeId,
+                    helperText: tr.cloudHomeIdHelp,
+                  ),
                 ),
                 if (isCustom) ...[
                   const SizedBox(height: 12),
@@ -221,14 +249,21 @@ class _CloudSettingsPageState extends State<CloudSettingsPage> {
                     minLines: 3,
                     maxLines: 8,
                     autocorrect: false,
-                    decoration: InputDecoration(labelText: tr.cloudCustomCa, helperText: tr.cloudCustomCaHelp),
+                    decoration: InputDecoration(
+                      labelText: tr.cloudCustomCa,
+                      helperText: tr.cloudCustomCaHelp,
+                    ),
                   ),
                 ],
                 if (_message != null) ...[
                   const SizedBox(height: 16),
                   Text(
                     _message!,
-                    style: TextStyle(color: _messageOk ? Colors.green : Theme.of(context).colorScheme.error),
+                    style: TextStyle(
+                      color: _messageOk
+                          ? Colors.green
+                          : Theme.of(context).colorScheme.error,
+                    ),
                   ),
                 ],
                 const SizedBox(height: 20),
@@ -244,7 +279,11 @@ class _CloudSettingsPageState extends State<CloudSettingsPage> {
                     OutlinedButton.icon(
                       onPressed: _busy ? null : () => _test(tr),
                       icon: _busy
-                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
                           : const Icon(Icons.network_check),
                       label: Text(tr.cloudTest),
                     ),

@@ -7,7 +7,8 @@ RoomInfo room(String id, String name, int rev, {bool deleted = false}) =>
 /// Order-independent description of a merged room table (a tombstone's name carries no meaning).
 String describe(Map<String, RoomInfo> table) {
   final parts = [
-    for (final r in table.values) '${r.id}|${r.deleted ? '-' : r.name}|${r.rev}|${r.deleted}',
+    for (final r in table.values)
+      '${r.id}|${r.deleted ? '-' : r.name}|${r.rev}|${r.deleted}',
   ]..sort();
   return parts.join(';');
 }
@@ -24,7 +25,10 @@ void main() {
         'sh/v1/myhome/+/lwt',
         'sh/v1/myhome/+/ack',
       ]);
-      expect(topics.subscriptions.any((t) => t.endsWith('/cmd')), isFalse); // the app never listens to cmd
+      expect(
+        topics.subscriptions.any((t) => t.endsWith('/cmd')),
+        isFalse,
+      ); // the app never listens to cmd
     });
 
     test('parse accepts only this home, a valid board id and a known leaf', () {
@@ -64,7 +68,14 @@ void main() {
         'junk',
       ],
       'devices': [
-        {'id': 'light', 'name': 'Light', 'type': 'switch', 'icon': 'light', 'room': 'room1', 'watts': 12},
+        {
+          'id': 'light',
+          'name': 'Light',
+          'type': 'switch',
+          'icon': 'light',
+          'room': 'room1',
+          'watts': 12,
+        },
         {'name': 'no id'},
         42,
       ],
@@ -90,13 +101,16 @@ void main() {
       expect(inv.pinsOut, isNull); // the cloud copy carries no GPIO details
     });
 
-    test('inventory: wrong version, bad board id and non-objects are rejected', () {
-      expect(BoardInventory.tryParse({...inventory, 'v': 2}), isNull);
-      expect(BoardInventory.tryParse({...inventory, 'board': 'a/b'}), isNull);
-      expect(BoardInventory.tryParse({...inventory, 'board': 7}), isNull);
-      expect(BoardInventory.tryParse('text'), isNull);
-      expect(BoardInventory.tryParse(null), isNull);
-    });
+    test(
+      'inventory: wrong version, bad board id and non-objects are rejected',
+      () {
+        expect(BoardInventory.tryParse({...inventory, 'v': 2}), isNull);
+        expect(BoardInventory.tryParse({...inventory, 'board': 'a/b'}), isNull);
+        expect(BoardInventory.tryParse({...inventory, 'board': 7}), isNull);
+        expect(BoardInventory.tryParse('text'), isNull);
+        expect(BoardInventory.tryParse(null), isNull);
+      },
+    );
 
     test('state: live values, optional sensors, estimated power', () {
       final st = BoardState.tryParse({
@@ -131,7 +145,13 @@ void main() {
     test('acknowledgements', () {
       final ok = CommandAck.tryParse({'v': 1, 'id': 'abc', 'ok': true})!;
       expect(ok.ok, isTrue);
-      final bad = CommandAck.tryParse({'v': 1, 'id': 'abc', 'ok': false, 'err': 'dnd', 'dup': true})!;
+      final bad = CommandAck.tryParse({
+        'v': 1,
+        'id': 'abc',
+        'ok': false,
+        'err': 'dnd',
+        'dup': true,
+      })!;
       expect(bad.ok, isFalse);
       expect(bad.error, 'dnd');
       expect(bad.duplicate, isTrue);
@@ -144,10 +164,15 @@ void main() {
       final v = BoardView('sh-aabbcc');
       expect(v.isAvailable(now), isFalse); // never heard
       v.stateAt = now.subtract(const Duration(seconds: 30));
-      expect(v.isAvailable(now), isTrue); // fresh state, no last-will message yet
+      expect(
+        v.isAvailable(now),
+        isTrue,
+      ); // fresh state, no last-will message yet
       v.lwtOnline = true;
       expect(v.isAvailable(now), isTrue);
-      v.stateAt = now.subtract(const Duration(seconds: 151)); // two missed 60 s heartbeats
+      v.stateAt = now.subtract(
+        const Duration(seconds: 151),
+      ); // two missed 60 s heartbeats
       expect(v.isAvailable(now), isFalse);
       v.stateAt = now;
       v.lwtOnline = false; // the broker published the Last Will
@@ -162,14 +187,32 @@ void main() {
     });
 
     test('a tombstone beats a live room at the same revision', () {
-      expect(roomBeats(room('a', 'x', 4, deleted: true), room('a', 'Revived', 4)), isTrue);
-      expect(roomBeats(room('a', 'Revived', 4), room('a', 'x', 4, deleted: true)), isFalse);
-      expect(roomBeats(room('a', 'x', 4, deleted: true), room('a', 'y', 4, deleted: true)), isFalse);
+      expect(
+        roomBeats(room('a', 'x', 4, deleted: true), room('a', 'Revived', 4)),
+        isTrue,
+      );
+      expect(
+        roomBeats(room('a', 'Revived', 4), room('a', 'x', 4, deleted: true)),
+        isFalse,
+      );
+      expect(
+        roomBeats(
+          room('a', 'x', 4, deleted: true),
+          room('a', 'y', 4, deleted: true),
+        ),
+        isFalse,
+      );
     });
 
     test('at the same revision the greater name wins, compared byte-wise like strcmp', () {
-      expect(roomBeats(room('a', 'Kitchen & Dining', 3), room('a', 'Cooking', 3)), isTrue);
-      expect(roomBeats(room('a', 'Cooking', 3), room('a', 'Kitchen & Dining', 3)), isFalse);
+      expect(
+        roomBeats(room('a', 'Kitchen & Dining', 3), room('a', 'Cooking', 3)),
+        isTrue,
+      );
+      expect(
+        roomBeats(room('a', 'Cooking', 3), room('a', 'Kitchen & Dining', 3)),
+        isFalse,
+      );
       // Hindi (3-byte UTF-8, lead byte 0xE0) sorts after ASCII
       expect(roomBeats(room('a', 'रसोई', 3), room('a', 'zebra', 3)), isTrue);
       expect(roomBeats(room('a', 'same', 3), room('a', 'same', 3)), isFalse);
@@ -184,7 +227,10 @@ void main() {
         [room('kitchen', 'gone', 4, deleted: true)],
       ];
       final expected = describe(mergeRoomTable(boards));
-      expect(expected, contains('kitchen|-|4|true')); // tombstone wins the rev-4 tie
+      expect(
+        expected,
+        contains('kitchen|-|4|true'),
+      ); // tombstone wins the rev-4 tie
       expect(expected, contains('den|Den|2|false'));
       // every rotation and the reverse
       for (var i = 0; i < boards.length; i++) {
@@ -192,31 +238,61 @@ void main() {
         expect(describe(mergeRoomTable(rotated)), expected);
         expect(describe(mergeRoomTable(rotated.reversed)), expected);
       }
-      expect(liveRooms(mergeRoomTable(boards)).map((r) => r.id), ['den', 'living']);
+      expect(liveRooms(mergeRoomTable(boards)).map((r) => r.id), [
+        'den',
+        'living',
+      ]);
     });
 
     test('live rooms are ordered by id (creation order for app-made ids)', () {
       final table = mergeRoomTable([
-        [room('rzz', 'Last', 1), room('room1', 'First', 1), room('rab', 'Middle', 1)],
+        [
+          room('rzz', 'Last', 1),
+          room('room1', 'First', 1),
+          room('rab', 'Middle', 1),
+        ],
       ]);
       expect(liveRooms(table).map((r) => r.id), ['rab', 'room1', 'rzz']);
     });
 
-    test('repairs bring a lagging board up to the merged state, and nothing else', () {
-      final merged = mergeRoomTable([
-        [room('kitchen', 'gone', 4, deleted: true), room('den', 'Den', 2), room('living', 'Living', 1), room('same', 'Same', 1)],
-      ]);
-      final lagging = [room('kitchen', 'Kitchen', 3), room('den', 'Den', 1), room('same', 'Same', 1)];
-      final ops = roomRepairs(merged, lagging);
-      expect(ops.map((o) => '${o.delete ? 'del' : 'set'}:${o.room.id}:${o.room.rev}').toList()..sort(), [
-        'del:kitchen:4',
-        'set:den:2',
-        'set:living:1',
-      ]);
-      // a board that never had the deleted room needs no tombstone; an up-to-date board needs nothing
-      expect(roomRepairs(merged, [room('den', 'Den', 2), room('living', 'Living', 1), room('same', 'Same', 1)]), isEmpty);
-      expect(roomRepairs(merged, merged.values.toList()), isEmpty);
-    });
+    test(
+      'repairs bring a lagging board up to the merged state, and nothing else',
+      () {
+        final merged = mergeRoomTable([
+          [
+            room('kitchen', 'gone', 4, deleted: true),
+            room('den', 'Den', 2),
+            room('living', 'Living', 1),
+            room('same', 'Same', 1),
+          ],
+        ]);
+        final lagging = [
+          room('kitchen', 'Kitchen', 3),
+          room('den', 'Den', 1),
+          room('same', 'Same', 1),
+        ];
+        final ops = roomRepairs(merged, lagging);
+        expect(
+          ops
+              .map(
+                (o) => '${o.delete ? 'del' : 'set'}:${o.room.id}:${o.room.rev}',
+              )
+              .toList()
+            ..sort(),
+          ['del:kitchen:4', 'set:den:2', 'set:living:1'],
+        );
+        // a board that never had the deleted room needs no tombstone; an up-to-date board needs nothing
+        expect(
+          roomRepairs(merged, [
+            room('den', 'Den', 2),
+            room('living', 'Living', 1),
+            room('same', 'Same', 1),
+          ]),
+          isEmpty,
+        );
+        expect(roomRepairs(merged, merged.values.toList()), isEmpty);
+      },
+    );
   });
 
   group('composite ids', () {

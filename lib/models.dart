@@ -8,7 +8,17 @@ int? _int(Object? v) => v is num ? v.toInt() : null;
 /// list for ITS chip; this conservative fallback leaves out boot-signal pins (5, 14), strapping
 /// pins and 16/17 (PSRAM on WROVER modules).
 const List<int> defaultOutPins = <int>[
-  13, 18, 19, 21, 22, 23, 25, 26, 27, 32, 33,
+  13,
+  18,
+  19,
+  21,
+  22,
+  23,
+  25,
+  26,
+  27,
+  32,
+  33,
 ];
 const List<int> defaultInPins = <int>[34, 35, 36, 39];
 
@@ -61,20 +71,20 @@ class Esp32Device {
   }
 
   Esp32Device copyWith({bool? on, int? room}) => Esp32Device(
-        id: id,
-        name: name,
-        type: type,
-        group: group,
-        icon: icon,
-        room: room ?? this.room,
-        on: on ?? this.on,
-        watts: watts,
-        wh: wh,
-        pin: pin,
-        boardId: boardId,
-        available: available,
-        remoteAllowed: remoteAllowed,
-      );
+    id: id,
+    name: name,
+    type: type,
+    group: group,
+    icon: icon,
+    room: room ?? this.room,
+    on: on ?? this.on,
+    watts: watts,
+    wh: wh,
+    pin: pin,
+    boardId: boardId,
+    available: available,
+    remoteAllowed: remoteAllowed,
+  );
 }
 
 class Esp32State {
@@ -124,44 +134,44 @@ class Esp32State {
   bool get apActive => mode == 'ap' || mode == 'ap+sta';
 
   Esp32State withDevice(String id, {required bool on}) => _copy(
-        devices: [for (final d in devices) d.id == id ? d.copyWith(on: on) : d],
-      );
+    devices: [for (final d in devices) d.id == id ? d.copyWith(on: on) : d],
+  );
 
   Esp32State withRoom(String id, int room) => _copy(
-        devices: [for (final d in devices) d.id == id ? d.copyWith(room: room) : d],
-      );
+    devices: [for (final d in devices) d.id == id ? d.copyWith(room: room) : d],
+  );
 
   Esp32State withDnd(bool value) => _copy(dnd: value);
 
   Esp32State _copy({bool? dnd, List<Esp32Device>? devices}) => Esp32State(
-        name: name,
-        fw: fw,
-        ssid: ssid,
-        ip: ip,
-        rssi: rssi,
-        uptime: uptime,
-        temp: temp,
-        hum: hum,
-        dnd: dnd ?? this.dnd,
-        camera: camera,
-        powerW: powerW,
-        devices: devices ?? this.devices,
-        mode: mode,
-        apSsid: apSsid,
-        pinsOut: pinsOut,
-        pinsIn: pinsIn,
-        maxDevices: maxDevices,
-        board: board,
-      );
+    name: name,
+    fw: fw,
+    ssid: ssid,
+    ip: ip,
+    rssi: rssi,
+    uptime: uptime,
+    temp: temp,
+    hum: hum,
+    dnd: dnd ?? this.dnd,
+    camera: camera,
+    powerW: powerW,
+    devices: devices ?? this.devices,
+    mode: mode,
+    apSsid: apSsid,
+    pinsOut: pinsOut,
+    pinsIn: pinsIn,
+    maxDevices: maxDevices,
+    board: board,
+  );
 }
 
 /// Firmware 4.x names the modes "station" / "setup" / "offline"; the UI uses sta / ap / offline.
 String wifiModeOf(Object? v) => switch (v) {
-      'station' || 'sta' => 'sta',
-      'setup' || 'ap' => 'ap',
-      'ap+sta' => 'ap+sta',
-      _ => 'offline',
-    };
+  'station' || 'sta' => 'sta',
+  'setup' || 'ap' => 'ap',
+  'ap+sta' => 'ap+sta',
+  _ => 'offline',
+};
 
 /// One Wi-Fi network found by the ESP32 scan.
 class WifiNetwork {
@@ -176,10 +186,10 @@ class WifiNetwork {
   final bool secure; // needs a password
 
   factory WifiNetwork.fromJson(Map<String, dynamic> j) => WifiNetwork(
-        ssid: (j['ssid'] as String?) ?? '',
-        rssi: _int(j['rssi']) ?? -100,
-        secure: j['secure'] != false,
-      );
+    ssid: (j['ssid'] as String?) ?? '',
+    rssi: _int(j['rssi']) ?? -100,
+    secure: j['secure'] != false,
+  );
 }
 
 /// Answer of GET /api/wifi/scan. The ESP32 scans in the background, so the
@@ -195,7 +205,8 @@ class WifiScan {
     final list = <WifiNetwork>[
       if (raw is List)
         for (final item in raw)
-          if (item is Map) WifiNetwork.fromJson(Map<String, dynamic>.from(item)),
+          if (item is Map)
+            WifiNetwork.fromJson(Map<String, dynamic>.from(item)),
     ].where((n) => n.ssid.isNotEmpty).toList();
     return WifiScan(scanning: j['scanning'] == true, networks: list);
   }
@@ -229,15 +240,15 @@ class WifiStatus {
   final bool saved; // a Wi-Fi is saved in the ESP32's flash
 
   factory WifiStatus.fromJson(Map<String, dynamic> j) => WifiStatus(
-        state: (j['state'] as String?) ?? 'idle',
-        connected: j['connected'] == true,
-        ssid: (j['ssid'] as String?) ?? '',
-        ip: (j['ip'] as String?) ?? '',
-        rssi: _int(j['rssi']) ?? 0,
-        mode: wifiModeOf(j['mode']),
-        apSsid: (j['apSsid'] as String?) ?? '',
-        target: (j['target'] as String?) ?? '',
-        error: (j['error'] as String?) ?? '',
-        saved: j['saved'] == true,
-      );
+    state: (j['state'] as String?) ?? 'idle',
+    connected: j['connected'] == true,
+    ssid: (j['ssid'] as String?) ?? '',
+    ip: (j['ip'] as String?) ?? '',
+    rssi: _int(j['rssi']) ?? 0,
+    mode: wifiModeOf(j['mode']),
+    apSsid: (j['apSsid'] as String?) ?? '',
+    target: (j['target'] as String?) ?? '',
+    error: (j['error'] as String?) ?? '',
+    saved: j['saved'] == true,
+  );
 }

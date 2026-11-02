@@ -10,6 +10,7 @@
 /// The local REST endpoint GET /api/v2/state returns the SAME inventory and state objects, so every
 /// parser here serves both transports.
 library;
+
 import 'dart:convert';
 
 import 'models.dart';
@@ -34,13 +35,16 @@ class Topics {
 
   /// Wildcard subscriptions of the app (it never subscribes to `cmd`).
   List<String> get subscriptions => [
-        for (final leaf in const ['state', 'inventory', 'lwt', 'ack']) '$topicRoot/$homeId/+/$leaf',
-      ];
+    for (final leaf in const ['state', 'inventory', 'lwt', 'ack'])
+      '$topicRoot/$homeId/+/$leaf',
+  ];
 
   /// Splits "sh/v1/`<home>`/`<board>`/`<leaf>`" into board and leaf; null for anything else.
   ({String board, String leaf})? parse(String topic) {
     final p = topic.split('/');
-    if (p.length != 5 || p[0] != 'sh' || p[1] != 'v1' || p[2] != homeId) return null;
+    if (p.length != 5 || p[0] != 'sh' || p[1] != 'v1' || p[2] != homeId) {
+      return null;
+    }
     if (!validBoardId(p[3]) || !_leafPattern.hasMatch(p[4])) return null;
     return (board: p[3], leaf: p[4]);
   }
@@ -48,7 +52,12 @@ class Topics {
 
 // ---------------------------------------------------------------------------- rooms
 class RoomInfo {
-  const RoomInfo({required this.id, required this.name, required this.rev, this.deleted = false});
+  const RoomInfo({
+    required this.id,
+    required this.name,
+    required this.rev,
+    this.deleted = false,
+  });
 
   final String id;
   final String name;
@@ -60,21 +69,38 @@ class RoomInfo {
     final id = v['id'];
     final name = v['name'];
     final rev = v['rev'];
-    if (id is! String || id.isEmpty || name is! String || rev is! num) return null;
-    return RoomInfo(id: id, name: name, rev: rev.toInt(), deleted: v['deleted'] == true);
+    if (id is! String || id.isEmpty || name is! String || rev is! num) {
+      return null;
+    }
+    return RoomInfo(
+      id: id,
+      name: name,
+      rev: rev.toInt(),
+      deleted: v['deleted'] == true,
+    );
   }
 
-  Map<String, dynamic> toJson() => {'id': id, 'name': name, 'rev': rev, if (deleted) 'deleted': true};
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'rev': rev,
+    if (deleted) 'deleted': true,
+  };
 
   @override
   bool operator ==(Object other) =>
-      other is RoomInfo && other.id == id && other.name == name && other.rev == rev && other.deleted == deleted;
+      other is RoomInfo &&
+      other.id == id &&
+      other.name == name &&
+      other.rev == rev &&
+      other.deleted == deleted;
 
   @override
   int get hashCode => Object.hash(id, name, rev, deleted);
 
   @override
-  String toString() => 'Room($id, "$name", rev $rev${deleted ? ', deleted' : ''})';
+  String toString() =>
+      'Room($id, "$name", rev $rev${deleted ? ', deleted' : ''})';
 }
 
 int _compareUtf8(String a, String b) {
@@ -110,7 +136,8 @@ Map<String, RoomInfo> mergeRoomTable(Iterable<List<RoomInfo>> perBoard) {
 
 /// Live rooms in a stable order (by id), for the tab bar.
 List<RoomInfo> liveRooms(Map<String, RoomInfo> table) {
-  final list = table.values.where((r) => !r.deleted).toList()..sort((a, b) => a.id.compareTo(b.id));
+  final list = table.values.where((r) => !r.deleted).toList()
+    ..sort((a, b) => a.id.compareTo(b.id));
   return list;
 }
 
@@ -167,28 +194,29 @@ class DeviceInfo {
   final double watts;
   final bool enabled;
   final bool remote;
-  final String? fault; // set when the pin is unusable on this board ("flash", "psram", ...)
+  final String?
+  fault; // set when the pin is unusable on this board ("flash", "psram", ...)
   final int pin; // only present in the local REST copy
   final bool invert;
   final int autoOffMin;
   final String bootState;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'type': type,
-        'group': group,
-        'icon': icon,
-        'room': room,
-        'watts': watts,
-        'enabled': enabled,
-        'remote': remote,
-        if (fault != null) 'fault': fault,
-        if (pin >= 0) 'pin': pin,
-        if (invert) 'invert': true,
-        if (autoOffMin != 0) 'autoOffMin': autoOffMin,
-        if (bootState != 'off') 'bootState': bootState,
-      };
+    'id': id,
+    'name': name,
+    'type': type,
+    'group': group,
+    'icon': icon,
+    'room': room,
+    'watts': watts,
+    'enabled': enabled,
+    'remote': remote,
+    if (fault != null) 'fault': fault,
+    if (pin >= 0) 'pin': pin,
+    if (invert) 'invert': true,
+    if (autoOffMin != 0) 'autoOffMin': autoOffMin,
+    if (bootState != 'off') 'bootState': bootState,
+  };
 
   static DeviceInfo? tryParse(Object? v) {
     if (v is! Map) return null;
@@ -221,7 +249,12 @@ class SceneInfo {
   Map<String, dynamic> toJson() => {'id': id, 'name': name};
 }
 
-List<int> _ints(Object? v) => v is List ? [for (final x in v) if (x is num) x.toInt()] : const <int>[];
+List<int> _ints(Object? v) => v is List
+    ? [
+        for (final x in v)
+          if (x is num) x.toInt(),
+      ]
+    : const <int>[];
 
 class BoardInventory {
   const BoardInventory({
@@ -258,20 +291,21 @@ class BoardInventory {
 
   /// Same shape as the firmware's inventory document, so [tryParse] reads it back (used by the start-up cache).
   Map<String, dynamic> toJson() => {
-        'v': protocolVersion,
-        'board': board,
-        'name': name,
-        'fw': fw,
-        'chip': chip,
-        'psram': psram,
-        'cfgRev': cfgRev,
-        'maxDevices': maxDevices,
-        'rooms': [for (final r in rooms) r.toJson()],
-        'devices': [for (final d in devices) d.toJson()],
-        'scenes': [for (final s in scenes) s.toJson()],
-        'counts': {'schedules': schedules, 'automations': automations},
-        if (pinsOut != null || pinsIn != null) 'pins': {'out': pinsOut ?? const <int>[], 'in': pinsIn ?? const <int>[]},
-      };
+    'v': protocolVersion,
+    'board': board,
+    'name': name,
+    'fw': fw,
+    'chip': chip,
+    'psram': psram,
+    'cfgRev': cfgRev,
+    'maxDevices': maxDevices,
+    'rooms': [for (final r in rooms) r.toJson()],
+    'devices': [for (final d in devices) d.toJson()],
+    'scenes': [for (final s in scenes) s.toJson()],
+    'counts': {'schedules': schedules, 'automations': automations},
+    if (pinsOut != null || pinsIn != null)
+      'pins': {'out': pinsOut ?? const <int>[], 'in': pinsIn ?? const <int>[]},
+  };
 
   /// Null when the document is not protocol version 1 or lacks a valid board id.
   static BoardInventory? tryParse(Object? json) {
@@ -279,18 +313,24 @@ class BoardInventory {
     if (json['v'] != protocolVersion) return null;
     final board = json['board'];
     if (board is! String || !validBoardId(board)) return null;
-    final rooms = (json['rooms'] is List ? json['rooms'] as List : const <Object?>[])
-        .map(RoomInfo.tryParse)
-        .whereType<RoomInfo>()
-        .toList();
-    final devices = (json['devices'] is List ? json['devices'] as List : const <Object?>[])
-        .map(DeviceInfo.tryParse)
-        .whereType<DeviceInfo>()
-        .toList();
+    final rooms =
+        (json['rooms'] is List ? json['rooms'] as List : const <Object?>[])
+            .map(RoomInfo.tryParse)
+            .whereType<RoomInfo>()
+            .toList();
+    final devices =
+        (json['devices'] is List ? json['devices'] as List : const <Object?>[])
+            .map(DeviceInfo.tryParse)
+            .whereType<DeviceInfo>()
+            .toList();
     final scenes = <SceneInfo>[
       if (json['scenes'] is List)
         for (final s in json['scenes'] as List)
-          if (s is Map && s['id'] is String) SceneInfo(s['id'] as String, (s['name'] as String?) ?? s['id'] as String),
+          if (s is Map && s['id'] is String)
+            SceneInfo(
+              s['id'] as String,
+              (s['name'] as String?) ?? s['id'] as String,
+            ),
     ];
     final counts = json['counts'] is Map ? json['counts'] as Map : const {};
     final pins = json['pins'] is Map ? json['pins'] as Map : null;
@@ -352,19 +392,19 @@ class BoardState {
   final Map<String, LiveDevice> devices;
 
   Map<String, dynamic> toJson() => {
-        'v': protocolVersion,
-        'seq': seq,
-        'ts': ts,
-        'up': uptime,
-        'rssi': rssi,
-        'ip': ip,
-        'dnd': dnd,
-        if (temp != null) 'temp': temp,
-        if (hum != null) 'hum': hum,
-        'powerW': powerW,
-        'cloud': cloud,
-        'd': {for (final e in devices.entries) e.key: e.value.toJson()},
-      };
+    'v': protocolVersion,
+    'seq': seq,
+    'ts': ts,
+    'up': uptime,
+    'rssi': rssi,
+    'ip': ip,
+    'dnd': dnd,
+    if (temp != null) 'temp': temp,
+    if (hum != null) 'hum': hum,
+    'powerW': powerW,
+    'cloud': cloud,
+    'd': {for (final e in devices.entries) e.key: e.value.toJson()},
+  };
 
   static BoardState? tryParse(Object? json) {
     if (json is! Map || json['v'] != protocolVersion) return null;
@@ -374,7 +414,10 @@ class BoardState {
       for (final e in d.entries) {
         final v = e.value;
         if (e.key is String && v is Map) {
-          live[e.key as String] = LiveDevice(on: v['on'] == true, wh: (v['wh'] as num?)?.toDouble() ?? 0);
+          live[e.key as String] = LiveDevice(
+            on: v['on'] == true,
+            wh: (v['wh'] as num?)?.toDouble() ?? 0,
+          );
         }
       }
     }
@@ -395,7 +438,12 @@ class BoardState {
 }
 
 class CommandAck {
-  const CommandAck({required this.id, required this.ok, this.error, this.duplicate = false});
+  const CommandAck({
+    required this.id,
+    required this.ok,
+    this.error,
+    this.duplicate = false,
+  });
   final String id;
   final bool ok;
   final String? error;
@@ -405,7 +453,12 @@ class CommandAck {
     if (json is! Map || json['v'] != protocolVersion) return null;
     final id = json['id'];
     if (id is! String) return null;
-    return CommandAck(id: id, ok: json['ok'] == true, error: json['err'] as String?, duplicate: json['dup'] == true);
+    return CommandAck(
+      id: id,
+      ok: json['ok'] == true,
+      error: json['err'] as String?,
+      duplicate: json['dup'] == true,
+    );
   }
 }
 
@@ -425,7 +478,10 @@ class BoardView {
 
   /// Reachable through the broker right now: not announced offline and its state is recent.
   /// Boards publish a heartbeat every 60 s, so 150 s tolerates two missed ones.
-  bool isAvailable(DateTime now, {Duration maxAge = const Duration(seconds: 150)}) {
+  bool isAvailable(
+    DateTime now, {
+    Duration maxAge = const Duration(seconds: 150),
+  }) {
     if (lwtOnline == false) return false;
     final at = stateAt;
     return at != null && now.difference(at) <= maxAge;
@@ -476,9 +532,14 @@ List<Esp32Device> dashboardDevices(
 Esp32State esp32StateFromRest(Map<String, dynamic> j) {
   final inv = BoardInventory.tryParse(j['inventory']);
   final st = BoardState.tryParse(j['state']);
-  if (inv == null || st == null) throw const FormatException('not a firmware 4.x state document');
-  final wifi = j['wifi'] is Map ? Map<String, dynamic>.from(j['wifi'] as Map) : const <String, dynamic>{};
-  final roomIds = (inv.rooms.where((r) => !r.deleted).map((r) => r.id).toList()..sort());
+  if (inv == null || st == null) {
+    throw const FormatException('not a firmware 4.x state document');
+  }
+  final wifi = j['wifi'] is Map
+      ? Map<String, dynamic>.from(j['wifi'] as Map)
+      : const <String, dynamic>{};
+  final roomIds = (inv.rooms.where((r) => !r.deleted).map((r) => r.id).toList()
+    ..sort());
   int roomIndex(String id) {
     final i = roomIds.indexOf(id);
     return i < 0 ? 0 : i;

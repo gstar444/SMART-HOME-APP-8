@@ -6,7 +6,11 @@ import 'mqtt_models.dart';
 
 /// What the app last knew about one board.
 class CachedBoard {
-  const CachedBoard({required this.inventory, required this.state, required this.savedAt});
+  const CachedBoard({
+    required this.inventory,
+    required this.state,
+    required this.savedAt,
+  });
 
   final BoardInventory inventory;
   final BoardState? state;
@@ -41,9 +45,17 @@ class SnapshotCache {
         final v = e.value;
         if (out.length >= maxBoards || e.key is! String || v is! Map) continue;
         final inv = BoardInventory.tryParse(v['inventory']);
-        final at = DateTime.fromMillisecondsSinceEpoch((v['savedAt'] as num?)?.toInt() ?? 0);
-        if (inv == null || inv.board != e.key || t.difference(at) > maxAge) continue;
-        out[e.key as String] = CachedBoard(inventory: inv, state: BoardState.tryParse(v['state']), savedAt: at);
+        final at = DateTime.fromMillisecondsSinceEpoch(
+          (v['savedAt'] as num?)?.toInt() ?? 0,
+        );
+        if (inv == null || inv.board != e.key || t.difference(at) > maxAge) {
+          continue;
+        }
+        out[e.key as String] = CachedBoard(
+          inventory: inv,
+          state: BoardState.tryParse(v['state']),
+          savedAt: at,
+        );
       }
     } catch (_) {
       // a damaged cache is just an empty cache
@@ -52,17 +64,18 @@ class SnapshotCache {
   }
 
   String encode(Map<String, CachedBoard> boards) => jsonEncode({
-        'boards': {
-          for (final e in boards.entries.take(maxBoards))
-            e.key: {
-              'savedAt': e.value.savedAt.millisecondsSinceEpoch,
-              'inventory': e.value.inventory.toJson(),
-              if (e.value.state != null) 'state': e.value.state!.toJson(),
-            },
+    'boards': {
+      for (final e in boards.entries.take(maxBoards))
+        e.key: {
+          'savedAt': e.value.savedAt.millisecondsSinceEpoch,
+          'inventory': e.value.inventory.toJson(),
+          if (e.value.state != null) 'state': e.value.state!.toJson(),
         },
-      });
+    },
+  });
 
-  Future<void> save(Map<String, CachedBoard> boards) => _prefs.setString(_key, encode(boards));
+  Future<void> save(Map<String, CachedBoard> boards) =>
+      _prefs.setString(_key, encode(boards));
 
   Future<void> clear() => _prefs.remove(_key);
 }

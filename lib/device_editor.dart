@@ -232,8 +232,10 @@ class _DeviceEditorDialogState extends State<_DeviceEditorDialog> {
               decoration: InputDecoration(
                 labelText: _tr.ctlRoom,
                 border: const OutlineInputBorder(),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<int>(
@@ -243,7 +245,10 @@ class _DeviceEditorDialogState extends State<_DeviceEditorDialog> {
                     for (var i = 0; i < widget.rooms.length; i++)
                       DropdownMenuItem<int>(
                         value: i,
-                        child: Text(widget.rooms[i], overflow: TextOverflow.ellipsis),
+                        child: Text(
+                          widget.rooms[i],
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                   ],
                   onChanged: (v) {
@@ -258,8 +263,10 @@ class _DeviceEditorDialogState extends State<_DeviceEditorDialog> {
                 labelText: _tr.ctlPin,
                 errorText: _pinError,
                 border: const OutlineInputBorder(),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<int>(
@@ -352,7 +359,9 @@ class _IconChoice extends StatelessWidget {
               height: 48,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: selected ? scheme.primary : scheme.surfaceContainerHighest,
+                color: selected
+                    ? scheme.primary
+                    : scheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(14),
               ),
               child: glyph(fg, 24),

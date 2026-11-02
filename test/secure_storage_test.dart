@@ -3,7 +3,8 @@ import 'dart:math';
 import 'package:esp32_controller/secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-CloudConfig valid({CloudProvider provider = CloudProvider.hivemq}) => CloudConfig(
+CloudConfig valid({CloudProvider provider = CloudProvider.hivemq}) =>
+    CloudConfig(
       provider: provider,
       host: 'abc123.s1.eu.hivemq.cloud',
       username: 'app-phone',
@@ -19,11 +20,17 @@ void main() {
       expect(valid().isComplete, isTrue);
     });
 
-    test('there is no way to configure plaintext MQTT for the cloud providers', () {
-      expect(valid().copyWith(port: 1883).validate(), isNotNull);
-      expect(valid(provider: CloudProvider.emqx).copyWith(port: 1883).validate(), isNotNull);
-      expect(valid().copyWith(port: 8883).validate(), isNull);
-    });
+    test(
+      'there is no way to configure plaintext MQTT for the cloud providers',
+      () {
+        expect(valid().copyWith(port: 1883).validate(), isNotNull);
+        expect(
+          valid(provider: CloudProvider.emqx).copyWith(port: 1883).validate(),
+          isNotNull,
+        );
+        expect(valid().copyWith(port: 8883).validate(), isNull);
+      },
+    );
 
     test('a self-hosted broker may use another TLS port, but still needs a valid port', () {
       final custom = valid(provider: CloudProvider.custom);
@@ -33,7 +40,15 @@ void main() {
     });
 
     test('hosts must be names, not IP addresses or junk', () {
-      for (final bad in ['', '192.168.1.5', 'localhost', 'a b.com', 'host_name.com', '.hivemq.cloud', 'x']) {
+      for (final bad in [
+        '',
+        '192.168.1.5',
+        'localhost',
+        'a b.com',
+        'host_name.com',
+        '.hivemq.cloud',
+        'x',
+      ]) {
         expect(valid().copyWith(host: bad).validate(), isNotNull, reason: bad);
       }
       expect(valid().copyWith(host: 'broker.example.org').validate(), isNull);
@@ -42,8 +57,20 @@ void main() {
     test('credentials and home id are required and the home id matches the topic rule', () {
       expect(valid().copyWith(username: ' ').validate(), isNotNull);
       expect(valid().copyWith(password: '').validate(), isNotNull);
-      for (final bad in ['', 'My Home', 'a/b', 'a#', 'a+b', 'UPPER', 'x' * 33]) {
-        expect(valid().copyWith(homeId: bad).validate(), isNotNull, reason: bad);
+      for (final bad in [
+        '',
+        'My Home',
+        'a/b',
+        'a#',
+        'a+b',
+        'UPPER',
+        'x' * 33,
+      ]) {
+        expect(
+          valid().copyWith(homeId: bad).validate(),
+          isNotNull,
+          reason: bad,
+        );
       }
       for (final good in ['home', 'my-home_2', 'x' * 32]) {
         expect(valid().copyWith(homeId: good).validate(), isNull, reason: good);
@@ -51,12 +78,26 @@ void main() {
     });
 
     test('an extra CA must be a certificate, never a private key', () {
-      const cert = '-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----';
-      expect(valid(provider: CloudProvider.custom).copyWith(customCaPem: cert).validate(), isNull);
-      expect(valid(provider: CloudProvider.custom).copyWith(customCaPem: 'hello').validate(), isNotNull);
+      const cert =
+          '-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----';
       expect(
         valid(provider: CloudProvider.custom)
-            .copyWith(customCaPem: '$cert\n-----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----')
+            .copyWith(customCaPem: cert)
+            .validate(),
+        isNull,
+      );
+      expect(
+        valid(provider: CloudProvider.custom)
+            .copyWith(customCaPem: 'hello')
+            .validate(),
+        isNotNull,
+      );
+      expect(
+        valid(provider: CloudProvider.custom)
+            .copyWith(
+              customCaPem:
+                  '$cert\n-----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----',
+            )
             .validate(),
         isNotNull,
       );
@@ -100,7 +141,9 @@ void main() {
     });
 
     test('generated tokens satisfy the firmware format and are unique', () {
-      final pattern = RegExp(r'^[A-Za-z0-9_-]{32,128}$'); // what the board accepts
+      final pattern = RegExp(
+        r'^[A-Za-z0-9_-]{32,128}$',
+      ); // what the board accepts
       final seen = <String>{};
       for (var i = 0; i < 50; i++) {
         final t = SecureStore.generateToken();
@@ -112,8 +155,14 @@ void main() {
     });
 
     test('token generation is driven by the supplied random source', () {
-      expect(SecureStore.generateToken(Random(1)), SecureStore.generateToken(Random(1)));
-      expect(SecureStore.generateToken(Random(1)), isNot(SecureStore.generateToken(Random(2))));
+      expect(
+        SecureStore.generateToken(Random(1)),
+        SecureStore.generateToken(Random(1)),
+      );
+      expect(
+        SecureStore.generateToken(Random(1)),
+        isNot(SecureStore.generateToken(Random(2))),
+      );
     });
   });
 }

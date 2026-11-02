@@ -92,7 +92,8 @@ class _WifiPageState extends State<WifiPage> {
   Future<void> _pick(WifiNetwork n) async {
     final creds = await showDialog<_Creds>(
       context: context,
-      builder: (_) => _CredentialsDialog(tr: _tr, ssid: n.ssid, secure: n.secure),
+      builder: (_) =>
+          _CredentialsDialog(tr: _tr, ssid: n.ssid, secure: n.secure),
     );
     if (creds == null || !mounted) return;
     await _connect(creds);
@@ -117,12 +118,8 @@ class _WifiPageState extends State<WifiPage> {
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => _ProvisionDialog(
-        esp: _esp,
-        settings: _sc,
-        tr: _tr,
-        ssid: creds.ssid,
-      ),
+      builder: (_) =>
+          _ProvisionDialog(esp: _esp, settings: _sc, tr: _tr, ssid: creds.ssid),
     );
   }
 
@@ -203,8 +200,9 @@ class _WifiPageState extends State<WifiPage> {
           Expanded(
             child: Text(
               value,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -245,8 +243,9 @@ class _WifiPageState extends State<WifiPage> {
               Expanded(
                 child: Text(
                   title,
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w800),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
               Container(
@@ -274,9 +273,9 @@ class _WifiPageState extends State<WifiPage> {
       child: Text(
         text,
         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.w700,
-            ),
+          color: Theme.of(context).colorScheme.primary,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
@@ -317,8 +316,10 @@ class _WifiPageState extends State<WifiPage> {
                         GlassCard(
                           child: Row(
                             children: [
-                              const Icon(Icons.settings_input_antenna,
-                                  color: _warnColor),
+                              const Icon(
+                                Icons.settings_input_antenna,
+                                color: _warnColor,
+                              ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
@@ -337,7 +338,9 @@ class _WifiPageState extends State<WifiPage> {
                             ? const SizedBox(
                                 width: 18,
                                 height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : const Icon(Icons.search),
                         label: Text(_scanning ? tr.scanning : tr.scanNetworks),
@@ -348,9 +351,7 @@ class _WifiPageState extends State<WifiPage> {
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           child: Text(
                             _scanError!,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
+                            style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(color: _badColor),
                           ),
                         )
@@ -381,8 +382,8 @@ class _WifiPageState extends State<WifiPage> {
                                 n.ssid == currentSsid
                                     ? Icons.check_circle
                                     : (n.secure
-                                        ? Icons.lock_outline
-                                        : Icons.lock_open_outlined),
+                                          ? Icons.lock_outline
+                                          : Icons.lock_open_outlined),
                                 size: 20,
                                 color: n.ssid == currentSsid ? _okColor : null,
                               ),
@@ -420,7 +421,9 @@ class _WifiPageState extends State<WifiPage> {
                       const SizedBox(height: 10),
                       OutlinedButton.icon(
                         onPressed: _reset,
-                        style: OutlinedButton.styleFrom(foregroundColor: _badColor),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: _badColor,
+                        ),
                         icon: const Icon(Icons.restart_alt),
                         label: Text(tr.wifiReset),
                       ),
@@ -544,7 +547,9 @@ class _CredentialsDialogState extends State<_CredentialsDialog> {
                   suffixIcon: IconButton(
                     tooltip: _hidden ? tr.showPassword : tr.hidePassword,
                     icon: Icon(
-                      _hidden ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                      _hidden
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
                     ),
                     onPressed: () => setState(() => _hidden = !_hidden),
                   ),
@@ -728,7 +733,10 @@ class _ProvisionDialogState extends State<_ProvisionDialog> {
           ],
         );
         actions = [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(tr.close)),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(tr.close),
+          ),
         ];
       case _Phase.success:
         title = tr.connectedOk;
@@ -738,8 +746,10 @@ class _ProvisionDialogState extends State<_ProvisionDialog> {
           children: [
             const Icon(Icons.check_circle, color: _okColor, size: 44),
             const SizedBox(height: 12),
-            Text('${widget.ssid}\n${tr.newIpIs(_ip)}',
-                style: theme.textTheme.titleSmall),
+            Text(
+              '${widget.ssid}\n${tr.newIpIs(_ip)}',
+              style: theme.textTheme.titleSmall,
+            ),
             if (_addressUpdated) ...[
               const SizedBox(height: 8),
               Text(tr.addressUpdated, style: theme.textTheme.bodySmall),
@@ -749,7 +759,10 @@ class _ProvisionDialogState extends State<_ProvisionDialog> {
           ],
         );
         actions = [
-          FilledButton(onPressed: () => Navigator.pop(context), child: Text(tr.ok)),
+          FilledButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(tr.ok),
+          ),
         ];
       case _Phase.failed:
         title = tr.wifiNotConnected;
@@ -762,13 +775,19 @@ class _ProvisionDialogState extends State<_ProvisionDialog> {
           ],
         );
         actions = [
-          FilledButton(onPressed: () => Navigator.pop(context), child: Text(tr.ok)),
+          FilledButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(tr.ok),
+          ),
         ];
       case _Phase.moved:
         title = tr.movedTitle;
         body = Text(tr.movedHelp, style: theme.textTheme.bodyMedium);
         actions = [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(tr.close)),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(tr.close),
+          ),
           FilledButton(onPressed: _enterIp, child: Text(tr.enterNewIp)),
         ];
     }

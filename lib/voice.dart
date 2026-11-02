@@ -10,7 +10,10 @@ const MethodChannel _voiceChannel = MethodChannel('esp32_controller/voice');
 class VoiceUnavailable implements Exception {}
 
 /// Opens the speech dialog once and returns what the user said (null = cancelled).
-Future<String?> listenOnce({required bool hindi, required String prompt}) async {
+Future<String?> listenOnce({
+  required bool hindi,
+  required String prompt,
+}) async {
   try {
     return await _voiceChannel.invokeMethod<String>('listen', {
       'locale': hindi ? 'hi-IN' : 'en-IN',
@@ -42,26 +45,83 @@ class VoiceAction {
 }
 
 const Map<String, List<String>> _aliases = {
-  'light': ['light', 'lights', 'lamp', 'bulb', 'batti', 'लाइट', 'लैंप', 'बत्ती'],
+  'light': [
+    'light',
+    'lights',
+    'lamp',
+    'bulb',
+    'batti',
+    'लाइट',
+    'लैंप',
+    'बत्ती',
+  ],
   'fan': ['fan', 'pankha', 'pankhe', 'पंखा', 'पंखे'],
   'heater': ['heater', 'geyser', 'हीटर', 'गीजर'],
-  'curtain': ['curtain', 'curtains', 'parda', 'parde', 'पर्दा', 'परदा', 'पर्दे'],
+  'curtain': [
+    'curtain',
+    'curtains',
+    'parda',
+    'parde',
+    'पर्दा',
+    'परदा',
+    'पर्दे',
+  ],
   'purifier': ['purifier', 'प्यूरीफायर', 'प्यूरिफायर'],
   'siren': ['siren', 'alarm', 'सायरन', 'अलार्म'],
-  'lock': ['lock', 'door', 'tala', 'taala', 'darwaza', 'ताला', 'दरवाजा', 'दरवाज़ा'],
+  'lock': [
+    'lock',
+    'door',
+    'tala',
+    'taala',
+    'darwaza',
+    'ताला',
+    'दरवाजा',
+    'दरवाज़ा',
+  ],
   'plug': ['plug', 'socket', 'प्लग', 'सॉकेट'],
 };
 
 const Set<String> _onWords = {
-  'on', 'start', 'open', 'chalu', 'chala', 'chalao', 'jala', 'jalao',
-  'चालू', 'ऑन', 'चला', 'चलाओ', 'जला', 'जलाओ', 'खोल', 'खोलो',
+  'on',
+  'start',
+  'open',
+  'chalu',
+  'chala',
+  'chalao',
+  'jala',
+  'jalao',
+  'चालू',
+  'ऑन',
+  'चला',
+  'चलाओ',
+  'जला',
+  'जलाओ',
+  'खोल',
+  'खोलो',
 };
 const Set<String> _offWords = {
-  'off', 'stop', 'close', 'band', 'bandh', 'bujha', 'bujhao',
-  'बंद', 'बन्द', 'ऑफ', 'ऑफ़', 'बुझा', 'बुझाओ',
+  'off',
+  'stop',
+  'close',
+  'band',
+  'bandh',
+  'bujha',
+  'bujhao',
+  'बंद',
+  'बन्द',
+  'ऑफ',
+  'ऑफ़',
+  'बुझा',
+  'बुझाओ',
 };
 const Set<String> _unlockWords = {
-  'unlock', 'open', 'khol', 'kholo', 'खोल', 'खोलो', 'खोलिए',
+  'unlock',
+  'open',
+  'khol',
+  'kholo',
+  'खोल',
+  'खोलो',
+  'खोलिए',
 };
 
 final RegExp _wordRe = RegExp(r'[\p{L}\p{M}]+', unicode: true);
@@ -77,7 +137,15 @@ VoiceAction? parseVoice(String raw, List<Esp32Device> devices) {
   bool saysPhrase(List<String> phrases) => phrases.any(text.contains);
 
   // Scenes first.
-  if (saysPhrase(['all off', 'everything off', 'sab band', 'sab bandh', 'सब बंद', 'सब बन्द', 'सभी बंद'])) {
+  if (saysPhrase([
+    'all off',
+    'everything off',
+    'sab band',
+    'sab bandh',
+    'सब बंद',
+    'सब बन्द',
+    'सभी बंद',
+  ])) {
     return const VoiceAction(scene: 'alloff');
   }
   if (saysPhrase(['good night', 'goodnight', 'गुड नाइट', 'शुभ रात्रि'])) {
@@ -104,14 +172,17 @@ VoiceAction? parseVoice(String raw, List<Esp32Device> devices) {
     if (!d.controllable) continue;
     final nameHit = nameOf(d);
     if (anyNamed && !nameHit) continue;
-    final aliasHit = (_aliases[d.icon] ?? const <String>[]).any(tokens.contains) ||
+    final aliasHit =
+        (_aliases[d.icon] ?? const <String>[]).any(tokens.contains) ||
         (d.isLock && tokens.contains('unlock'));
     if (!nameHit && !aliasHit) continue;
 
     if (d.isLock) {
       if (wantsUnlock) {
         lockBlocked = true; // never unlock by voice
-      } else if (wantsOff || tokens.contains('lock') || tokens.contains('ताला')) {
+      } else if (wantsOff ||
+          tokens.contains('lock') ||
+          tokens.contains('ताला')) {
         result[d.id] = true; // locking is always safe
       }
       continue;

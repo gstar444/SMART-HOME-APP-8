@@ -56,7 +56,8 @@ class SettingsPage extends StatelessWidget {
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
-                      builder: (_) => WifiPage(settings: controller, esp: espController),
+                      builder: (_) =>
+                          WifiPage(settings: controller, esp: espController),
                     ),
                   ),
                 ),
@@ -81,8 +82,11 @@ class SettingsPage extends StatelessWidget {
                         tooltip: tr.editDevice,
                         icon: const Icon(Icons.edit_outlined),
                         onPressed: () async {
-                          final edited =
-                              await _editDevice(context, tr, s.devices[i]);
+                          final edited = await _editDevice(
+                            context,
+                            tr,
+                            s.devices[i],
+                          );
                           if (edited != null) {
                             final list = [...s.devices]..[i] = edited;
                             change(s.copyWith(devices: list));
@@ -94,12 +98,21 @@ class SettingsPage extends StatelessWidget {
                         icon: const Icon(Icons.delete_outline),
                         onPressed: s.devices.length > 1
                             ? () {
-                                context.read<SecureStore>().deleteBoardToken(s.devices[i].tokenKey);
+                                context.read<SecureStore>().deleteBoardToken(
+                                  s.devices[i].tokenKey,
+                                );
                                 final list = [...s.devices]..removeAt(i);
                                 var active = s.activeDevice;
-                                if (active >= list.length) active = list.length - 1;
+                                if (active >= list.length) {
+                                  active = list.length - 1;
+                                }
                                 if (i < active) active -= 1;
-                                change(s.copyWith(devices: list, activeDevice: active));
+                                change(
+                                  s.copyWith(
+                                    devices: list,
+                                    activeDevice: active,
+                                  ),
+                                );
                               }
                             : null,
                       ),
@@ -112,10 +125,12 @@ class SettingsPage extends StatelessWidget {
                 onTap: () async {
                   final created = await _editDevice(context, tr, null);
                   if (created != null) {
-                    change(s.copyWith(
-                      devices: [...s.devices, created],
-                      activeDevice: s.devices.length,
-                    ));
+                    change(
+                      s.copyWith(
+                        devices: [...s.devices, created],
+                        activeDevice: s.devices.length,
+                      ),
+                    );
                   }
                 },
               ),
@@ -134,7 +149,9 @@ class SettingsPage extends StatelessWidget {
                 subtitle: Text(tr.cloudMenuHelp),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(builder: (_) => const CloudSettingsPage()),
+                  MaterialPageRoute<void>(
+                    builder: (_) => const CloudSettingsPage(),
+                  ),
                 ),
               ),
               _Section(tr.sectionAppearance),
@@ -159,12 +176,16 @@ class SettingsPage extends StatelessWidget {
                     ),
                   ],
                   selected: {s.themeMode},
-                  onSelectionChanged: (set) => change(s.copyWith(themeMode: set.first)),
+                  onSelectionChanged: (set) =>
+                      change(s.copyWith(themeMode: set.first)),
                 ),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                child: Text(tr.accent, style: Theme.of(context).textTheme.titleSmall),
+                child: Text(
+                  tr.accent,
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
@@ -212,15 +233,24 @@ class SettingsPage extends StatelessWidget {
               ListTile(
                 leading: const Icon(Icons.videocam_outlined),
                 title: Text(tr.cameraUrlTitle),
-                subtitle: Text(s.cameraUrl.isEmpty ? tr.cameraUrlNone : s.cameraUrl),
+                subtitle: Text(
+                  s.cameraUrl.isEmpty ? tr.cameraUrlNone : s.cameraUrl,
+                ),
                 onTap: () async {
-                  final text = await _askText(context, tr, tr.cameraUrlTitle, s.cameraUrl, helper: tr.cameraUrlHelp);
+                  final text = await _askText(
+                    context,
+                    tr,
+                    tr.cameraUrlTitle,
+                    s.cameraUrl,
+                    helper: tr.cameraUrlHelp,
+                  );
                   if (text == null || !context.mounted) return;
                   final v = text.trim();
                   if (isAcceptableCameraUrl(v)) {
                     change(s.copyWith(cameraUrl: v));
                   } else {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(tr.invalidUrl)));
+                    ScaffoldMessenger.of(context)
+                        .showSnackBar(SnackBar(content: Text(tr.invalidUrl)));
                   }
                 },
               ),
@@ -233,18 +263,25 @@ class SettingsPage extends StatelessWidget {
                     ButtonSegment(value: false, label: Text('English')),
                   ],
                   selected: {s.hindi},
-                  onSelectionChanged: (set) => change(s.copyWith(hindi: set.first)),
+                  onSelectionChanged: (set) =>
+                      change(s.copyWith(hindi: set.first)),
                 ),
               ),
               _Section(tr.sectionAbout),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(tr.securityNote, style: Theme.of(context).textTheme.bodySmall),
+                child: Text(
+                  tr.securityNote,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ),
               const SizedBox(height: 8),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(tr.settingsHint, style: Theme.of(context).textTheme.bodySmall),
+                child: Text(
+                  tr.settingsHint,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ),
               const SizedBox(height: 12),
               Padding(
@@ -297,9 +334,9 @@ class _Section extends StatelessWidget {
       child: Text(
         text,
         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.w700,
-            ),
+          color: Theme.of(context).colorScheme.primary,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
@@ -390,7 +427,10 @@ Future<int?> _askHex(BuildContext context, Tr tr, int current) {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr.cancel)),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(tr.cancel),
+          ),
           FilledButton(
             onPressed: () {
               final parsed = int.tryParse(field.text.trim(), radix: 16);
@@ -443,7 +483,10 @@ Future<Device?> _editDevice(BuildContext context, Tr tr, Device? existing) {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr.cancel)),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(tr.cancel),
+          ),
           FilledButton(
             onPressed: () {
               final normalized = normalizeUrl(url.text);
@@ -457,7 +500,8 @@ Future<Device?> _editDevice(BuildContext context, Tr tr, Device? existing) {
               }
               Navigator.pop(
                 ctx,
-                existing?.copyWith(name: trimmedName, url: normalized) ?? Device(name: trimmedName, url: normalized),
+                existing?.copyWith(name: trimmedName, url: normalized) ??
+                    Device(name: trimmedName, url: normalized),
               );
             },
             child: Text(tr.save),

@@ -64,10 +64,10 @@ class MqttService extends ChangeNotifier {
     this._ackTimeout = const Duration(seconds: 5),
     Duration Function(int attempt)? delayFor,
     Random? random,
-  })  : _factory = transportFactory,
-        _clock = clock ?? DateTime.now,
-        _delayFor = delayFor ?? reconnectDelay,
-        _random = random ?? Random.secure();
+  }) : _factory = transportFactory,
+       _clock = clock ?? DateTime.now,
+       _delayFor = delayFor ?? reconnectDelay,
+       _random = random ?? Random.secure();
 
   static const int maxBoards = 32;
   static const int maxPayloadBytes = 64 * 1024;
@@ -141,9 +141,10 @@ class MqttService extends ChangeNotifier {
   }
 
   String _clientId(String kind) {
-    final suffix = List<int>.generate(5, (_) => _random.nextInt(256))
-        .map((b) => b.toRadixString(16).padLeft(2, '0'))
-        .join();
+    final suffix = List<int>.generate(
+      5,
+      (_) => _random.nextInt(256),
+    ).map((b) => b.toRadixString(16).padLeft(2, '0')).join();
     return 'app-$kind-$suffix';
   }
 
@@ -197,7 +198,9 @@ class MqttService extends ChangeNotifier {
     _attempt++;
     _retryTimer?.cancel();
     _retryTimer = Timer(delay, () {
-      if (generation == _generation && !_disposed) unawaited(_connect(generation));
+      if (generation == _generation && !_disposed) {
+        unawaited(_connect(generation));
+      }
     });
   }
 
@@ -251,7 +254,9 @@ class MqttService extends ChangeNotifier {
         v.stateAt = now;
       case 'inventory':
         final inv = BoardInventory.tryParse(_decode(m.payload));
-        if (inv == null || inv.board != parsed.board) return; // a board may only describe itself
+        if (inv == null || inv.board != parsed.board) {
+          return; // a board may only describe itself
+        }
         final v = _view(parsed.board);
         if (v == null) return;
         v.inventory = inv;
@@ -260,7 +265,9 @@ class MqttService extends ChangeNotifier {
         final ack = CommandAck.tryParse(_decode(m.payload));
         if (ack == null) return;
         final p = _pending[ack.id];
-        if (p != null && p.board == parsed.board && !p.completer.isCompleted) p.completer.complete(ack);
+        if (p != null && p.board == parsed.board && !p.completer.isCompleted) {
+          p.completer.complete(ack);
+        }
         return; // acks do not change what is displayed
       default:
         return; // cmd and anything else: not for us
@@ -309,12 +316,16 @@ class MqttService extends ChangeNotifier {
 
   String _clientCommandId() {
     final bytes = List<int>.generate(9, (_) => _random.nextInt(256));
-    return base64Url.encode(bytes); // 12 chars of [A-Za-z0-9_-]: valid for the firmware (<= 24)
+    return base64Url.encode(
+      bytes,
+    ); // 12 chars of [A-Za-z0-9_-]: valid for the firmware (<= 24)
   }
 
   void _failPending(String reason) {
     for (final p in _pending.values) {
-      if (!p.completer.isCompleted) p.completer.complete(CommandAck(id: '', ok: false, error: reason));
+      if (!p.completer.isCompleted) {
+        p.completer.complete(CommandAck(id: '', ok: false, error: reason));
+      }
     }
   }
 

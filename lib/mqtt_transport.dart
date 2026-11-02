@@ -19,7 +19,8 @@ import 'secure_storage.dart';
 ///  * the library's auto-reconnect is off: [MqttService] owns the retry/backoff policy.
 class MqttClientTransport implements MqttTransport {
   MqttServerClient? _client;
-  final StreamController<MqttInbound> _messages = StreamController<MqttInbound>.broadcast();
+  final StreamController<MqttInbound> _messages =
+      StreamController<MqttInbound>.broadcast();
   final StreamController<bool> _connection = StreamController<bool>.broadcast();
   StreamSubscription<List<MqttReceivedMessage<MqttMessage>>>? _updates;
   bool _wasConnected = false;
@@ -31,22 +32,30 @@ class MqttClientTransport implements MqttTransport {
   Stream<bool> get connection => _connection.stream;
 
   @override
-  bool get isConnected => _client?.connectionStatus?.state == MqttConnectionState.connected;
+  bool get isConnected =>
+      _client?.connectionStatus?.state == MqttConnectionState.connected;
 
   @override
   Future<void> connect(CloudConfig config, String clientId) async {
-    final client = MqttServerClient.withPort(config.host.trim(), clientId, config.port);
+    final client = MqttServerClient.withPort(
+      config.host.trim(),
+      clientId,
+      config.port,
+    );
     client.secure = true;
     final context = SecurityContext(withTrustedRoots: true);
     if (config.customCaPem.isNotEmpty) {
       try {
         context.setTrustedCertificatesBytes(utf8.encode(config.customCaPem));
       } catch (_) {
-        throw const MqttTransportException('The custom CA certificate could not be read.');
+        throw const MqttTransportException(
+          'The custom CA certificate could not be read.',
+        );
       }
     }
     client.securityContext = context;
-    client.onBadCertificate = (dynamic certificate) => false; // never accept an unverifiable certificate
+    client.onBadCertificate = (dynamic certificate) =>
+        false; // never accept an unverifiable certificate
     client.setProtocolV311();
     client.keepAlivePeriod = 30;
     client.connectTimeoutPeriod = 8000;
@@ -74,17 +83,24 @@ class MqttClientTransport implements MqttTransport {
     } on HandshakeException {
       client.disconnect();
       throw const MqttTransportException(
-          'The broker certificate could not be verified (wrong host, expired, or untrusted CA). '
-          'The app refuses to connect.');
+        'The broker certificate could not be verified (wrong host, expired, or untrusted CA). '
+        'The app refuses to connect.',
+      );
     } on TlsException {
       client.disconnect();
-      throw const MqttTransportException('TLS error while connecting to the broker.');
+      throw const MqttTransportException(
+        'TLS error while connecting to the broker.',
+      );
     } on SocketException {
       client.disconnect();
-      throw const MqttTransportException('The broker is unreachable. Check the host name and your internet connection.');
+      throw const MqttTransportException(
+        'The broker is unreachable. Check the host name and your internet connection.',
+      );
     } on NoConnectionException {
       client.disconnect();
-      throw const MqttTransportException('The broker did not accept the connection (check host, username and password).');
+      throw const MqttTransportException(
+        'The broker did not accept the connection (check host, username and password).',
+      );
     } catch (_) {
       client.disconnect();
       throw const MqttTransportException('Could not connect to the broker.');
@@ -96,7 +112,9 @@ class MqttClientTransport implements MqttTransport {
       for (final e in events) {
         final msg = e.payload;
         if (msg is MqttPublishMessage) {
-          final text = MqttPublishPayload.bytesToStringAsString(msg.payload.message);
+          final text = MqttPublishPayload.bytesToStringAsString(
+            msg.payload.message,
+          );
           if (!_messages.isClosed) _messages.add(MqttInbound(e.topic, text));
         }
       }
@@ -124,14 +142,17 @@ class MqttClientTransport implements MqttTransport {
   @override
   Future<void> publish(String topic, String payload) async {
     final c = _client;
-    if (c == null || !isConnected) throw const MqttTransportException('Not connected.');
+    if (c == null || !isConnected) {
+      throw const MqttTransportException('Not connected.');
+    }
     final builder = MqttClientPayloadBuilder()..addString(payload);
     c.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
   }
 
   @override
   Future<void> disconnect() async {
-    _wasConnected = false; // an intentional disconnect is not a "lost connection"
+    _wasConnected =
+        false; // an intentional disconnect is not a "lost connection"
     await _updates?.cancel();
     _updates = null;
     _client?.disconnect();

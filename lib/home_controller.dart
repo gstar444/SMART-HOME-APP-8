@@ -65,9 +65,11 @@ class HomeController extends ChangeNotifier {
     Duration reevaluateEvery = const Duration(seconds: 20),
     this._cacheDelay = const Duration(seconds: 3),
     Random? random,
-  })  : _clock = clock ?? DateTime.now,
-        _random = random ?? Random.secure() {
-    _restored.addAll(cache?.load(now: _clock()) ?? const <String, CachedBoard>{});
+  }) : _clock = clock ?? DateTime.now,
+       _random = random ?? Random.secure() {
+    _restored.addAll(
+      cache?.load(now: _clock()) ?? const <String, CachedBoard>{},
+    );
     mqtt.addListener(_onSource);
     local.addListener(_onSource);
     _ticker = Timer.periodic(reevaluateEvery, (_) => _onSource());
@@ -113,7 +115,9 @@ class HomeController extends ChangeNotifier {
   List<BoardStatus> get boards => _boards;
 
   /// Names for the room tabs (never empty, so the tab bar always has something to show).
-  List<String> get roomNames => _rooms.isEmpty ? const <String>['Room 1'] : [for (final r in _rooms) r.name];
+  List<String> get roomNames => _rooms.isEmpty
+      ? const <String>['Room 1']
+      : [for (final r in _rooms) r.name];
   List<String> get roomIds => [for (final r in _rooms) r.id];
 
   String get localBoardId => local.boardId;
@@ -191,7 +195,9 @@ class HomeController extends ChangeNotifier {
 
     final ids = invs.keys.toList()
       ..sort((a, b) {
-        final c = invs[a]!.name.toLowerCase().compareTo(invs[b]!.name.toLowerCase());
+        final c = invs[a]!.name.toLowerCase().compareTo(
+          invs[b]!.name.toLowerCase(),
+        );
         return c != 0 ? c : a.compareTo(b);
       });
 
@@ -203,7 +209,12 @@ class HomeController extends ChangeNotifier {
       final inv = invs[id]!;
       final st = live[id];
       final ok = avail[id] ?? false;
-      for (final d in dashboardDevices(inv, st, roomIndex: (r) => roomIndex[r] ?? 0, available: ok)) {
+      for (final d in dashboardDevices(
+        inv,
+        st,
+        roomIndex: (r) => roomIndex[r] ?? 0,
+        available: ok,
+      )) {
         final o = _overlay[d.id];
         devices.add(o == null ? d : d.copyWith(on: o.on));
       }
@@ -239,8 +250,12 @@ class HomeController extends ChangeNotifier {
             ip: ls?.ip ?? '',
             rssi: ls?.rssi ?? 0,
             uptime: ls?.uptime ?? 0,
-            temp: temps.isEmpty ? null : temps.reduce((a, b) => a + b) / temps.length,
-            hum: hums.isEmpty ? null : hums.reduce((a, b) => a + b) / hums.length,
+            temp: temps.isEmpty
+                ? null
+                : temps.reduce((a, b) => a + b) / temps.length,
+            hum: hums.isEmpty
+                ? null
+                : hums.reduce((a, b) => a + b) / hums.length,
             dnd: dnd,
             camera: settings.value.cameraUrl,
             powerW: power,
@@ -260,13 +275,21 @@ class HomeController extends ChangeNotifier {
   // ------------------------------------------------------------------- start-up cache
   /// Only data that really came from a board is remembered, and only when something meaningful changed
   /// (names, rooms, on/off, temperature) - not on every heartbeat - so flash is not written needlessly.
-  void _scheduleCacheSave(Map<String, BoardInventory> invs, Map<String, BoardState?> live, Map<String, bool> avail) {
+  void _scheduleCacheSave(
+    Map<String, BoardInventory> invs,
+    Map<String, BoardState?> live,
+    Map<String, bool> avail,
+  ) {
     if (cache == null || _disposed) return;
     final fresh = <String, CachedBoard>{};
     final now = _clock();
     for (final id in invs.keys) {
       if (avail[id] != true) continue;
-      fresh[id] = CachedBoard(inventory: invs[id]!, state: live[id], savedAt: now);
+      fresh[id] = CachedBoard(
+        inventory: invs[id]!,
+        state: live[id],
+        savedAt: now,
+      );
     }
     if (fresh.isEmpty) return;
     final sig = _signature(fresh);
@@ -286,7 +309,10 @@ class HomeController extends ChangeNotifier {
         [
           boards[id]!.inventory.toJson(),
           {
-            for (final e in (boards[id]!.state?.devices ?? const <String, LiveDevice>{}).entries) e.key: e.value.on,
+            for (final e
+                in (boards[id]!.state?.devices ?? const <String, LiveDevice>{})
+                    .entries)
+              e.key: e.value.on,
           },
           boards[id]!.state?.temp,
           boards[id]!.state?.hum,
@@ -298,7 +324,9 @@ class HomeController extends ChangeNotifier {
     _cacheTimer = null;
     final c = cache;
     if (c == null || _disposed || _pendingSignature == _lastSignature) return;
-    _restored.addAll(_pendingFresh); // what we just learned replaces the old memory of those boards
+    _restored.addAll(
+      _pendingFresh,
+    ); // what we just learned replaces the old memory of those boards
     _lastSignature = _pendingSignature;
     await c.save(_restored);
   }
@@ -315,7 +343,9 @@ class HomeController extends ChangeNotifier {
     final s = _state;
     if (s == null) return;
     final last = _lastSample;
-    if (last != null && now.difference(last) < const Duration(seconds: 15)) return;
+    if (last != null && now.difference(last) < const Duration(seconds: 15)) {
+      return;
+    }
     _lastSample = now;
     _samples.add({
       for (final d in s.devices)
@@ -325,9 +355,14 @@ class HomeController extends ChangeNotifier {
   }
 
   // ------------------------------------------------------------------- routing
-  bool _viaLocal(String boardId) => local.online && local.boardId == boardId && boardId.isNotEmpty;
+  bool _viaLocal(String boardId) =>
+      local.online && local.boardId == boardId && boardId.isNotEmpty;
 
-  Future<String?> _remote(String board, Map<String, dynamic> body, {String? busyKey}) async {
+  Future<String?> _remote(
+    String board,
+    Map<String, dynamic> body, {
+    String? busyKey,
+  }) async {
     if (!mqtt.connected) return _tr.notConnected;
     if (busyKey != null) {
       _pending.add(busyKey);
@@ -353,11 +388,21 @@ class HomeController extends ChangeNotifier {
     if (sp == null || dev == null) return _tr.notConnected;
     if (!dev.available) return _tr.boardOffline;
     if (_viaLocal(sp.board)) return local.setDevice(id, on);
-    if (!dev.remoteAllowed && !(dev.type == 'lock' && on)) return _tr.remoteNotAllowed;
+    if (!dev.remoteAllowed && !(dev.type == 'lock' && on)) {
+      return _tr.remoteNotAllowed;
+    }
 
     _overlay[id] = _Overlay(on, _clock());
-    final err = await _remote(sp.board, {'op': 'set', 'dev': sp.device, 'on': on}, busyKey: id);
-    if (err != null) _overlay.remove(id); // the board refused or never answered: show the truth again
+    final err = await _remote(sp.board, {
+      'op': 'set',
+      'dev': sp.device,
+      'on': on,
+    }, busyKey: id);
+    if (err != null) {
+      _overlay.remove(
+        id,
+      ); // the board refused or never answered: show the truth again
+    }
     _onSource();
     return err;
   }
@@ -366,7 +411,9 @@ class HomeController extends ChangeNotifier {
     String? first;
     var reached = false;
     for (final b in _boards.where((b) => b.available)) {
-      final err = _viaLocal(b.id) ? await local.setDnd(on) : await _remote(b.id, {'op': 'dnd', 'on': on});
+      final err = _viaLocal(b.id)
+          ? await local.setDnd(on)
+          : await _remote(b.id, {'op': 'dnd', 'on': on});
       if (err == null) {
         reached = true;
       } else {
@@ -385,7 +432,9 @@ class HomeController extends ChangeNotifier {
     String? first;
     var reached = false;
     for (final b in _boards.where((b) => b.available)) {
-      final err = _viaLocal(b.id) ? await local.runScene(sceneId) : await _remote(b.id, {'op': 'scene', 'scene': sceneId});
+      final err = _viaLocal(b.id)
+          ? await local.runScene(sceneId)
+          : await _remote(b.id, {'op': 'scene', 'scene': sceneId});
       if (err == null) {
         reached = true;
       } else {
@@ -409,7 +458,13 @@ class HomeController extends ChangeNotifier {
     int? watts,
   }) {
     if (!local.online) return Future.value(_tr.localOnly);
-    return local.addDevice(name: name, icon: icon, pin: pin, roomId: _roomIdAt(room), watts: watts);
+    return local.addDevice(
+      name: name,
+      icon: icon,
+      pin: pin,
+      roomId: _roomIdAt(room),
+      watts: watts,
+    );
   }
 
   void setLocalRoom(String id, int room) {
@@ -430,20 +485,23 @@ class HomeController extends ChangeNotifier {
     if (sp == null) return Future.value(_tr.notConnected);
     final roomId = room == null ? null : _roomIdAt(room);
     if (_viaLocal(sp.board)) {
-      return local.updateDevice(id, name: name, icon: icon, pin: pin, roomId: roomId, watts: watts);
+      return local.updateDevice(
+        id,
+        name: name,
+        icon: icon,
+        pin: pin,
+        roomId: roomId,
+        watts: watts,
+      );
     }
     if (pin != null || watts != null) return Future.value(_tr.localOnly);
-    return _remote(
-      sp.board,
-      {
-        'op': 'device.update',
-        'dev': sp.device,
-        'name': ?name,
-        'icon': ?icon,
-        'room': ?roomId,
-      },
-      busyKey: id,
-    );
+    return _remote(sp.board, {
+      'op': 'device.update',
+      'dev': sp.device,
+      'name': ?name,
+      'icon': ?icon,
+      'room': ?roomId,
+    }, busyKey: id);
   }
 
   Future<String?> deleteDevice(String id) {
@@ -452,40 +510,66 @@ class HomeController extends ChangeNotifier {
     return local.deleteDevice(id);
   }
 
-  Future<String?> moveDevice(String id, int roomIndex) => updateDevice(id, room: roomIndex);
+  Future<String?> moveDevice(String id, int roomIndex) =>
+      updateDevice(id, room: roomIndex);
 
   // --------------------------------------------------------------------- rooms
-  String _roomIdAt(int index) => (index >= 0 && index < _rooms.length) ? _rooms[index].id : (_rooms.isEmpty ? '' : _rooms.first.id);
+  String _roomIdAt(int index) => (index >= 0 && index < _rooms.length)
+      ? _rooms[index].id
+      : (_rooms.isEmpty ? '' : _rooms.first.id);
 
   /// "r" + time (base 36, 6 digits until 2059) + 2 random characters: unique across phones and
   /// sorting in creation order, so a new room becomes the last tab. Matches [A-Za-z0-9_]{1,15}.
   String _newRoomId() {
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
     final seconds = _clock().millisecondsSinceEpoch ~/ 1000;
-    final salt = List.generate(2, (_) => chars[_random.nextInt(chars.length)]).join();
+    final salt = List.generate(
+      2,
+      (_) => chars[_random.nextInt(chars.length)],
+    ).join();
     return 'r${seconds.toRadixString(36)}$salt';
   }
 
-  Future<String?> addRoom(String name) =>
-      _broadcastRoom(RoomOp.upsert(RoomInfo(id: _newRoomId(), name: name.trim(), rev: 1)));
+  Future<String?> addRoom(String name) => _broadcastRoom(
+    RoomOp.upsert(RoomInfo(id: _newRoomId(), name: name.trim(), rev: 1)),
+  );
 
   Future<String?> renameRoom(int index, String name) {
-    if (index < 0 || index >= _rooms.length) return Future.value(_tr.notConnected);
+    if (index < 0 || index >= _rooms.length) {
+      return Future.value(_tr.notConnected);
+    }
     final r = _rooms[index];
-    return _broadcastRoom(RoomOp.upsert(RoomInfo(id: r.id, name: name.trim(), rev: r.rev + 1)));
+    return _broadcastRoom(
+      RoomOp.upsert(RoomInfo(id: r.id, name: name.trim(), rev: r.rev + 1)),
+    );
   }
 
   Future<String?> deleteRoom(int index) {
-    if (index < 0 || index >= _rooms.length) return Future.value(_tr.notConnected);
+    if (index < 0 || index >= _rooms.length) {
+      return Future.value(_tr.notConnected);
+    }
     final r = _rooms[index];
-    return _broadcastRoom(RoomOp.delete(RoomInfo(id: r.id, name: r.name, rev: r.rev + 1, deleted: true)));
+    return _broadcastRoom(
+      RoomOp.delete(
+        RoomInfo(id: r.id, name: r.name, rev: r.rev + 1, deleted: true),
+      ),
+    );
   }
 
-  Map<String, dynamic> _roomJson(RoomInfo r) => {'id': r.id, 'name': r.name, 'rev': r.rev};
+  Map<String, dynamic> _roomJson(RoomInfo r) => {
+    'id': r.id,
+    'name': r.name,
+    'rev': r.rev,
+  };
 
   Future<String?> _sendRoom(String board, RoomOp op) {
-    if (_viaLocal(board)) return op.delete ? local.deleteRoom(op.room) : local.upsertRoom(op.room);
-    return _remote(board, {'op': op.delete ? 'room.delete' : 'room.upsert', 'room': _roomJson(op.room)});
+    if (_viaLocal(board)) {
+      return op.delete ? local.deleteRoom(op.room) : local.upsertRoom(op.room);
+    }
+    return _remote(board, {
+      'op': op.delete ? 'room.delete' : 'room.upsert',
+      'room': _roomJson(op.room),
+    });
   }
 
   /// Room metadata is replicated on every board. Boards that can not be reached now are brought
@@ -513,15 +597,19 @@ class HomeController extends ChangeNotifier {
     for (final entry in _inventories.entries) {
       if (avail[entry.key] != true) continue;
       final last = _lastRepair[entry.key];
-      if (last != null && now.difference(last) < const Duration(seconds: 60)) continue;
+      if (last != null && now.difference(last) < const Duration(seconds: 60)) {
+        continue;
+      }
       final ops = roomRepairs(_roomTable, entry.value.rooms);
       if (ops.isEmpty) continue;
       _lastRepair[entry.key] = now;
-      unawaited(Future(() async {
-        for (final op in ops) {
-          await _sendRoom(entry.key, op);
-        }
-      }));
+      unawaited(
+        Future(() async {
+          for (final op in ops) {
+            await _sendRoom(entry.key, op);
+          }
+        }),
+      );
     }
   }
 

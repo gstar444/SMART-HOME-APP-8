@@ -85,7 +85,8 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   /// Tab index of a device. Rooms are stored on the boards and merged by HomeController.
-  int _roomOfDevice(Esp32Device d, List<String> rooms) => d.room.clamp(0, rooms.length - 1).toInt();
+  int _roomOfDevice(Esp32Device d, List<String> rooms) =>
+      d.room.clamp(0, rooms.length - 1).toInt();
 
   void _openSettings() {
     Navigator.of(context).push(
@@ -104,11 +105,14 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   void _openBoards() {
-    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const BoardsPage()));
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (_) => const BoardsPage()));
   }
 
   void _openCloud() {
-    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const CloudSettingsPage()));
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const CloudSettingsPage()));
   }
 
   // ------------------------------------------------------------- actions
@@ -232,7 +236,9 @@ class _DashboardPageState extends State<DashboardPage> {
   // ------------------------------------------------- add / edit / remove
   Future<void> _addDevice({String? icon}) async {
     final tr = Tr.of(_s);
-    final st = _esp.local.state; // pins and limits come from the board that will be wired
+    final st = _esp
+        .local
+        .state; // pins and limits come from the board that will be wired
     if (st == null || !_esp.localOnline) {
       _snack(tr.localOnly);
       return;
@@ -263,7 +269,9 @@ class _DashboardPageState extends State<DashboardPage> {
   Future<void> _editControl(Esp32Device d) async {
     final tr = Tr.of(_s);
     final st = _esp.local.state;
-    final mine = _esp.localDevice(d); // the local copy knows the GPIO pin; the cloud copy does not
+    final mine = _esp.localDevice(
+      d,
+    ); // the local copy knows the GPIO pin; the cloud copy does not
     if (st == null || mine == null || !_esp.localOnline) {
       _snack(tr.localOnly);
       return;
@@ -411,7 +419,10 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr.cancel)),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(tr.cancel),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, field.text),
             child: Text(tr.save),
@@ -423,7 +434,10 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Future<void> _addRoom() async {
     final tr = Tr.of(_s);
-    final name = await _askName(tr.addRoom, 'Room ${_esp.roomNames.length + 1}');
+    final name = await _askName(
+      tr.addRoom,
+      'Room ${_esp.roomNames.length + 1}',
+    );
     if (name == null || name.trim().isEmpty) return;
     final error = await _esp.addRoom(name);
     if (error != null) {
@@ -467,7 +481,11 @@ class _DashboardPageState extends State<DashboardPage> {
       _snack(error);
       return;
     }
-    if (mounted) setState(() => _room = math.max(0, math.min(_room, _esp.roomNames.length - 2)));
+    if (mounted) {
+      setState(
+        () => _room = math.max(0, math.min(_room, _esp.roomNames.length - 2)),
+      );
+    }
   }
 
   void _roomMenu(int index) {
@@ -549,69 +567,81 @@ class _DashboardPageState extends State<DashboardPage> {
         caption = d.on ? tr.capOn : tr.capOff;
       }
       if (!d.available) caption = tr.capOffline;
-      tiles.add(_Tile(
-        group: d.group,
-        glyph: glyphFor(d.icon, d.on && d.available),
-        label: d.name,
-        caption: caption,
-        active: d.on && d.available,
-        outline: d.icon == 'heater',
-        span: d.isLock ? 2 : 1,
-        busy: _esp.isBusy(d.id),
-        onTap: d.controllable ? () => _toggle(d) : null,
-        id: d.id,
-    onLongPress: () => _deviceMenu(d),
-      ));
+      tiles.add(
+        _Tile(
+          group: d.group,
+          glyph: glyphFor(d.icon, d.on && d.available),
+          label: d.name,
+          caption: caption,
+          active: d.on && d.available,
+          outline: d.icon == 'heater',
+          span: d.isLock ? 2 : 1,
+          busy: _esp.isBusy(d.id),
+          onTap: d.controllable ? () => _toggle(d) : null,
+          id: d.id,
+          onLongPress: () => _deviceMenu(d),
+        ),
+      );
     }
 
     // House-level tiles are shown in every room.
     final temp = st.temp;
-    tiles.add(_Tile(
-      group: 'Climate',
-      glyph: (color, size) => Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.device_thermostat, color: color, size: size),
-          Text(
-            temp == null ? '—' : '${temp.round()}°C',
-            style: TextStyle(fontSize: size * 0.3, color: color),
-          ),
-        ],
+    tiles.add(
+      _Tile(
+        group: 'Climate',
+        glyph: (color, size) => Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.device_thermostat, color: color, size: size),
+            Text(
+              temp == null ? '—' : '${temp.round()}°C',
+              style: TextStyle(fontSize: size * 0.3, color: color),
+            ),
+          ],
+        ),
+        label: tr.tempSensor,
+        onTap: () => _showTemp(st),
       ),
-      label: tr.tempSensor,
-      onTap: () => _showTemp(st),
-    ));
-    tiles.add(_Tile(
-      group: 'Security',
-      glyph: _iconGlyph(Icons.videocam),
-      label: tr.securityCam,
-      caption: st.camera.isEmpty ? '—' : tr.capView,
-      onTap: () => _openCamera(st),
-    ));
-    tiles.add(_Tile(
-      group: 'Scenes',
-      glyph: _iconGlyph(Icons.bedtime),
-      label: tr.dnd,
-      caption: st.dnd ? tr.capOn : tr.capOff,
-      active: st.dnd,
-      busy: _esp.isBusy('dnd'),
-      onTap: () => _toggleDnd(st),
-    ));
-    tiles.add(_Tile(
-      group: 'Scenes',
-      glyph: _iconGlyph(Icons.manage_history),
-      label: tr.routines,
-      onTap: _openRoutines,
-    ));
-    tiles.add(_Tile(
-      group: 'Scenes',
-      glyph: _shapeGlyph('candle'),
-      label: tr.moodDinner,
-      caption: tr.capRun,
-      busy: _esp.isBusy('scene:dinner'),
-      onTap: () => _scene('dinner'),
-    ));
+    );
+    tiles.add(
+      _Tile(
+        group: 'Security',
+        glyph: _iconGlyph(Icons.videocam),
+        label: tr.securityCam,
+        caption: st.camera.isEmpty ? '—' : tr.capView,
+        onTap: () => _openCamera(st),
+      ),
+    );
+    tiles.add(
+      _Tile(
+        group: 'Scenes',
+        glyph: _iconGlyph(Icons.bedtime),
+        label: tr.dnd,
+        caption: st.dnd ? tr.capOn : tr.capOff,
+        active: st.dnd,
+        busy: _esp.isBusy('dnd'),
+        onTap: () => _toggleDnd(st),
+      ),
+    );
+    tiles.add(
+      _Tile(
+        group: 'Scenes',
+        glyph: _iconGlyph(Icons.manage_history),
+        label: tr.routines,
+        onTap: _openRoutines,
+      ),
+    );
+    tiles.add(
+      _Tile(
+        group: 'Scenes',
+        glyph: _shapeGlyph('candle'),
+        label: tr.moodDinner,
+        caption: tr.capRun,
+        busy: _esp.isBusy('scene:dinner'),
+        onTap: () => _scene('dinner'),
+      ),
+    );
     return tiles;
   }
 
@@ -669,7 +699,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   dim: dim && t.group != 'Scenes',
                   onTap: t.onTap,
                   onLongPress: t.onLongPress,
-            id: t.id,
+                  id: t.id,
                 ),
             ],
           ),
@@ -699,9 +729,7 @@ class _DashboardPageState extends State<DashboardPage> {
             s.title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
+            style: Theme.of(context).textTheme.titleMedium
                 ?.copyWith(fontWeight: FontWeight.w800, letterSpacing: 0.5),
           ),
         ),
@@ -736,7 +764,8 @@ class _DashboardPageState extends State<DashboardPage> {
           tooltip: tr.cloudIconTip,
           icon: Icon(switch (_esp.mqtt.phase) {
             MqttPhase.connected => Icons.cloud_done_outlined,
-            MqttPhase.connecting || MqttPhase.reconnecting => Icons.cloud_sync_outlined,
+            MqttPhase.connecting ||
+            MqttPhase.reconnecting => Icons.cloud_sync_outlined,
             MqttPhase.failed => Icons.cloud_off_outlined,
             MqttPhase.disabled => Icons.cloud_outlined,
           }),
@@ -826,7 +855,8 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _roomBar(Tr tr, Color accent, int room) {
     final rooms = _esp.roomNames;
-    final muted = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.62);
+    final muted = Theme.of(context).colorScheme.onSurface
+        .withValues(alpha: 0.62);
     return Row(
       children: [
         GestureDetector(
@@ -855,7 +885,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       accent: accent,
                       onTap: () => setState(() => _room = i),
                       onLongPress: () => _roomMenu(i),
-                    onDropDevice: (id) => _dropToRoom(id, i),
+                      onDropDevice: (id) => _dropToRoom(id, i),
                     ),
                   ),
               ],
@@ -871,7 +901,10 @@ class _DashboardPageState extends State<DashboardPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.add, size: 24, color: muted),
-                Text(tr.addRoom, style: TextStyle(fontSize: 10.5, color: muted)),
+                Text(
+                  tr.addRoom,
+                  style: TextStyle(fontSize: 10.5, color: muted),
+                ),
               ],
             ),
           ),
@@ -953,7 +986,11 @@ class _DashboardPageState extends State<DashboardPage> {
       padding: const EdgeInsets.all(22),
       child: Column(
         children: [
-          const Icon(Icons.wifi_off_rounded, size: 48, color: Color(0xFFEF4444)),
+          const Icon(
+            Icons.wifi_off_rounded,
+            size: 48,
+            color: Color(0xFFEF4444),
+          ),
           const SizedBox(height: 12),
           Text(
             tr.cantReach,
@@ -1062,16 +1099,26 @@ class _DashboardPageState extends State<DashboardPage> {
                           final wide = c.maxWidth >= 720;
                           final inner = usable - 26; // inside a group box
                           final cols = (inner / 76).floor().clamp(3, 6).toInt();
-                          final tileWidth = wide ? 96.0 : (inner - (cols - 1) * 12) / cols;
+                          final tileWidth = wide
+                              ? 96.0
+                              : (inner - (cols - 1) * 12) / cols;
                           return RefreshIndicator(
                             onRefresh: _esp.refresh,
                             child: Align(
                               alignment: Alignment.topCenter,
                               child: ConstrainedBox(
-                                constraints: const BoxConstraints(maxWidth: 1000),
+                                constraints: const BoxConstraints(
+                                  maxWidth: 1000,
+                                ),
                                 child: ListView(
-                                  physics: const AlwaysScrollableScrollPhysics(),
-                                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+                                  physics:
+                                      const AlwaysScrollableScrollPhysics(),
+                                  padding: const EdgeInsets.fromLTRB(
+                                    16,
+                                    8,
+                                    16,
+                                    28,
+                                  ),
                                   children: [
                                     _topBar(tr),
                                     const SizedBox(height: 8),
@@ -1089,8 +1136,8 @@ class _DashboardPageState extends State<DashboardPage> {
                                       _addBar(tr),
                                       const SizedBox(height: 14),
                                       if (_showEnergy) ...[
-                                      _energy(tr, st, room, accent),
-                                      const SizedBox(height: 18),
+                                        _energy(tr, st, room, accent),
+                                        const SizedBox(height: 18),
                                       ],
                                       _tileGrid(
                                         _buildTiles(tr, st, room),
