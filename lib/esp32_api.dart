@@ -547,7 +547,8 @@ class Esp32Controller extends ChangeNotifier with WidgetsBindingObserver impleme
   Future<String> _resolveUrl() async {
     final saved = _settings.value.activeUrl;
     if (await _reachable(saved)) return saved;
-    final found = await _discoverByMdns();
+    var found = await _discoverByMdns();
+    found ??= await _scanSubnet(saved);
     if (found != null && found != saved) {
       final s = _settings.value;
       final updated = [for (final d in s.devices) d.url == saved ? d.copyWith(url: found) : d];
@@ -555,6 +556,38 @@ class Esp32Controller extends ChangeNotifier with WidgetsBindingObserver impleme
       return found;
     }
     return saved;
+  }
+
+  // Last resort when mDNS is blocked (2.4 GHz vs 5 GHz, or multicast filtered):
+  // scan the saved IP's /24 subnet for a board that answers /api/v2/state.
+  // Anonymous probe: /api/v2/info has no secrets and needs no token.
+  // It is used only to find which IP is really a Smart Home board.
+  Future<bool> _isBoard(String url) async {
+    try {
+      final res = await BoardHttp(baseUrl: url, token: null, client: _client)
+          .call('GET', '/api/v2/info')
+          .timeout(const Duration(seconds: 2));
+      return res['board'] == 'sh-282160' || (res['board'] as String?)?.startsWith('sh-') == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<String?> _scanSubnet(String saved) async {
+    final base = Uri.tryParse(saved)?.host ?? '';
+    final parts = base.split('.');
+    if (parts.length != 4) return null;
+    final prefix = '${parts[0]}.${parts[1]}.${parts[2]}';
+    final futures = <Future<String?>>[];
+    for (var i = 1; i <= 254; i++) {
+      final url = 'http://$prefix.$i/';
+      futures.add(_isBoard(url).then((ok) => ok ? url : null));
+    }
+    final results = await Future.wait(futures);
+    for (final r in results) {
+      if (r != null) return r;
+    }
+    return null;
   }
 
   Future<bool> _reachable(String url) async {
