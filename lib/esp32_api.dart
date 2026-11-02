@@ -566,7 +566,11 @@ class Esp32Controller extends ChangeNotifier with WidgetsBindingObserver impleme
     }
   }
 
-  Future<String?> _discoverByMdns() async {
+  Future<String?> _discoverByMdns() {
+    return _discoverByMdnsInner().timeout(const Duration(seconds: 4), onTimeout: () => null);
+  }
+
+  Future<String?> _discoverByMdnsInner() async {
     final client = MDnsClient();
     try {
       await client.start();
