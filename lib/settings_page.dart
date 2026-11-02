@@ -48,17 +48,6 @@ class SettingsPage extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 32),
             children: [
               _Section(tr.sectionGeneral),
-              ListTile(
-                leading: const Icon(Icons.home_outlined),
-                title: Text(tr.appName),
-                subtitle: Text(s.title),
-                onTap: () async {
-                  final text = await _askText(context, tr, tr.appName, s.title);
-                  if (text != null && text.trim().isNotEmpty) {
-                    change(s.copyWith(title: text.trim()));
-                  }
-                },
-              ),
               if (espController != null)
                 ListTile(
                   leading: const Icon(Icons.wifi),

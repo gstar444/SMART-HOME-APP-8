@@ -53,7 +53,7 @@ class Device {
 
 class AppSettings {
   const AppSettings({
-    this.title = 'SMART HOME',
+    this.title = 'GSTAR HOME',
     this.devices = const [Device(name: 'ESP32', url: defaultEsp32Url)],
     this.activeDevice = 0,
     this.themeMode = ThemeMode.dark,
@@ -237,7 +237,7 @@ class SettingsController extends ChangeNotifier {
       final oldDark = prefs.getBool('dark_mode');
       final oldAccent = prefs.getInt('accent_color');
       settings = AppSettings(
-        title: oldTitle ?? 'SMART HOME',
+        title: oldTitle ?? 'GSTAR HOME',
         devices: [Device(name: 'ESP32', url: oldUrl ?? defaultEsp32Url)],
         themeMode: oldDark == null
             ? ThemeMode.dark
