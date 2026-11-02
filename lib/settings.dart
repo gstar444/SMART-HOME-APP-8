@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const String defaultEsp32Url = 'http://192.168.1.37/';
+const String defaultEsp32Url = 'http://192.168.0.106/';
 /// Address of the ESP32's own setup hotspot ("SmartHome-Setup").
 const String setupEsp32Url = 'http://192.168.4.1/';
 // Backwards-compatible constant used by the project's URL smoke test.
