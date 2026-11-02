@@ -11,7 +11,7 @@ void main() {
   test('default ESP32 URL is an HTTP URL with an IP host', () {
     final uri = Uri.parse(esp32Url);
     expect(uri.scheme, 'http');
-    expect(uri.host, '192.168.1.37');
+    expect(uri.host, '192.168.0.106');
     expect(uri.path, '/');
   });
 
