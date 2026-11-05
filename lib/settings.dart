@@ -169,6 +169,8 @@ class AppSettings {
     'cameraUrl': cameraUrl,
     'rooms': rooms,
     'roomOf': roomOf,
+    'order': order,
+    'groupOf': groupOf,
   };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) {

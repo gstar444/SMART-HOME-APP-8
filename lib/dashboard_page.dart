@@ -566,7 +566,7 @@ class _DashboardPageState extends State<DashboardPage> {
       if (!d.available) caption = tr.capOffline;
       tiles.add(
         _Tile(
-          group: d.group,
+          group: _sc.value.groupOf[d.id] ?? d.group,
           glyph: glyphFor(d.icon, d.on && d.available),
           label: d.name,
           caption: caption,
