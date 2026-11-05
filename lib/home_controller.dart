@@ -343,9 +343,8 @@ class HomeController extends ChangeNotifier {
     final s = _state;
     if (s == null) return;
     final last = _lastSample;
-    if (last != null && now.difference(last) < const Duration(seconds: 15)) {
+    if (last != null && now.difference(last) < const Duration(seconds: 15))
       return;
-    }
     _lastSample = now;
     _samples.add({
       for (final d in s.devices)
@@ -388,9 +387,8 @@ class HomeController extends ChangeNotifier {
     if (sp == null || dev == null) return _tr.notConnected;
     if (!dev.available) return _tr.boardOffline;
     if (_viaLocal(sp.board)) return local.setDevice(id, on);
-    if (!dev.remoteAllowed && !(dev.type == 'lock' && on)) {
+    if (!dev.remoteAllowed && !(dev.type == 'lock' && on))
       return _tr.remoteNotAllowed;
-    }
 
     _overlay[id] = _Overlay(on, _clock());
     final err = await _remote(sp.board, {
@@ -398,11 +396,10 @@ class HomeController extends ChangeNotifier {
       'dev': sp.device,
       'on': on,
     }, busyKey: id);
-    if (err != null) {
+    if (err != null)
       _overlay.remove(
         id,
       ); // the board refused or never answered: show the truth again
-    }
     _onSource();
     return err;
   }
@@ -467,12 +464,6 @@ class HomeController extends ChangeNotifier {
     );
   }
 
-  void setLocalRoom(String id, int room) {
-    final s = _state;
-    if (s == null) return;
-    notifyListeners();
-  }
-
   Future<String?> updateDevice(
     String id, {
     String? name,
@@ -535,9 +526,8 @@ class HomeController extends ChangeNotifier {
   );
 
   Future<String?> renameRoom(int index, String name) {
-    if (index < 0 || index >= _rooms.length) {
+    if (index < 0 || index >= _rooms.length)
       return Future.value(_tr.notConnected);
-    }
     final r = _rooms[index];
     return _broadcastRoom(
       RoomOp.upsert(RoomInfo(id: r.id, name: name.trim(), rev: r.rev + 1)),
@@ -545,9 +535,8 @@ class HomeController extends ChangeNotifier {
   }
 
   Future<String?> deleteRoom(int index) {
-    if (index < 0 || index >= _rooms.length) {
+    if (index < 0 || index >= _rooms.length)
       return Future.value(_tr.notConnected);
-    }
     final r = _rooms[index];
     return _broadcastRoom(
       RoomOp.delete(
@@ -563,9 +552,8 @@ class HomeController extends ChangeNotifier {
   };
 
   Future<String?> _sendRoom(String board, RoomOp op) {
-    if (_viaLocal(board)) {
+    if (_viaLocal(board))
       return op.delete ? local.deleteRoom(op.room) : local.upsertRoom(op.room);
-    }
     return _remote(board, {
       'op': op.delete ? 'room.delete' : 'room.upsert',
       'room': _roomJson(op.room),
@@ -597,9 +585,8 @@ class HomeController extends ChangeNotifier {
     for (final entry in _inventories.entries) {
       if (avail[entry.key] != true) continue;
       final last = _lastRepair[entry.key];
-      if (last != null && now.difference(last) < const Duration(seconds: 60)) {
+      if (last != null && now.difference(last) < const Duration(seconds: 60))
         continue;
-      }
       final ops = roomRepairs(_roomTable, entry.value.rooms);
       if (ops.isEmpty) continue;
       _lastRepair[entry.key] = now;

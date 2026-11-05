@@ -35,7 +35,6 @@ class _Tile {
     this.span = 1,
     this.onTap,
     this.onLongPress,
-    this.id,
   });
 
   final String group;
@@ -48,7 +47,6 @@ class _Tile {
   final int span;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
-  final String? id;
 }
 
 GlyphBuilder _iconGlyph(IconData icon) =>
@@ -266,6 +264,34 @@ class _DashboardPageState extends State<DashboardPage> {
     _snack(error ?? tr.ctlAdded);
   }
 
+  /// Moves a button up (-1) or down (1) inside its own room, by swapping its order with the neighbour.
+  Future<void> _moveInRoom(Esp32Device d, int delta) async {
+    final room = _roomOfDevice(d, _esp.roomNames);
+    final inRoom =
+        [
+          for (final x in _esp.state?.devices ?? const <Esp32Device>[])
+            if (_roomOfDevice(x, _esp.roomNames) == room) x,
+        ]..sort(
+          (a, b) => (_sc.value.order[a.id] ?? 0).compareTo(
+            _sc.value.order[b.id] ?? 0,
+          ),
+        );
+    final i = inRoom.indexWhere((x) => x.id == d.id);
+    final j = i + delta;
+    if (i < 0 || j < 0 || j >= inRoom.length) return;
+    final order = Map<String, int>.from(_sc.value.order);
+    for (var k = 0; k < inRoom.length; k++) {
+      order[inRoom[k].id] = k;
+    }
+    final a = inRoom[i].id;
+    final b = inRoom[j].id;
+    final tmp = order[a]!;
+    order[a] = order[b]!;
+    order[b] = tmp;
+    await _sc.update(_sc.value.copyWith(order: order));
+    if (mounted) setState(() {});
+  }
+
   Future<void> _editControl(Esp32Device d) async {
     final tr = Tr.of(_s);
     final st = _esp.local.state;
@@ -340,6 +366,22 @@ class _DashboardPageState extends State<DashboardPage> {
               onTap: () {
                 Navigator.pop(ctx);
                 _editControl(d);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.arrow_upward),
+              title: const Text('ऊपर ले जाएँ'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _moveInRoom(d, -1);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.arrow_downward),
+              title: const Text('नीचे ले जाएँ'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _moveInRoom(d, 1);
               },
             ),
             ListTile(
@@ -481,11 +523,10 @@ class _DashboardPageState extends State<DashboardPage> {
       _snack(error);
       return;
     }
-    if (mounted) {
+    if (mounted)
       setState(
         () => _room = math.max(0, math.min(_room, _esp.roomNames.length - 2)),
       );
-    }
   }
 
   void _roomMenu(int index) {
@@ -520,17 +561,6 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Future<void> _dropToRoom(String deviceId, int room) async {
-    _esp.setLocalRoom(deviceId, room);
-    final error = await _esp.moveDevice(deviceId, room);
-    if (!mounted) return;
-    if (error != null) {
-      _snack(error);
-      return;
-    }
-    setState(() {});
-  }
-
   Future<void> _moveDevice(Esp32Device d) async {
     final tr = Tr.of(_s);
     final rooms = _esp.roomNames;
@@ -556,7 +586,12 @@ class _DashboardPageState extends State<DashboardPage> {
   List<_Tile> _buildTiles(Tr tr, Esp32State st, int room) {
     final tiles = <_Tile>[];
 
-    for (final d in st.devices) {
+    for (final d
+        in ([...st.devices]..sort(
+          (a, b) => (_sc.value.order[a.id] ?? 0).compareTo(
+            _sc.value.order[b.id] ?? 0,
+          ),
+        ))) {
       if (_roomOfDevice(d, _esp.roomNames) != room) continue;
       String caption;
       if (d.isLock) {
@@ -578,7 +613,6 @@ class _DashboardPageState extends State<DashboardPage> {
           span: d.isLock ? 2 : 1,
           busy: _esp.isBusy(d.id),
           onTap: d.controllable ? () => _toggle(d) : null,
-          id: d.id,
           onLongPress: () => _deviceMenu(d),
         ),
       );
@@ -699,7 +733,6 @@ class _DashboardPageState extends State<DashboardPage> {
                   dim: dim && t.group != 'Scenes',
                   onTap: t.onTap,
                   onLongPress: t.onLongPress,
-                  id: t.id,
                 ),
             ],
           ),
@@ -885,7 +918,6 @@ class _DashboardPageState extends State<DashboardPage> {
                       accent: accent,
                       onTap: () => setState(() => _room = i),
                       onLongPress: () => _roomMenu(i),
-                      onDropDevice: (id) => _dropToRoom(id, i),
                     ),
                   ),
               ],

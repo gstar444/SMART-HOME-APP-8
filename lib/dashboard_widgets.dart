@@ -341,7 +341,6 @@ class RoomChip extends StatelessWidget {
     required this.accent,
     required this.onTap,
     this.onLongPress,
-    this.onDropDevice,
   });
 
   final String label;
@@ -349,52 +348,40 @@ class RoomChip extends StatelessWidget {
   final Color accent;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
-  final void Function(String deviceId)? onDropDevice;
 
   @override
   Widget build(BuildContext context) {
-    return DragTarget<String>(
-      onWillAcceptWithDetails: (_) => onDropDevice != null,
-      onAcceptWithDetails: (d) => onDropDevice?.call(d.data),
-      builder: (context, candidate, rejected) {
-        final hovering = candidate.isNotEmpty;
-        return GestureDetector(
-          onTap: onTap,
-          onLongPress: onLongPress,
-          behavior: HitTestBehavior.opaque,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              color: selected || hovering
-                  ? accent.withValues(alpha: 0.2)
-                  : Colors.transparent,
-              border: Border.all(
-                color: selected || hovering ? accent : _border(context),
-              ),
-              boxShadow: selected
-                  ? [
-                      BoxShadow(
-                        color: accent.withValues(alpha: 0.35),
-                        blurRadius: 14,
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                color: selected
-                    ? Theme.of(context).colorScheme.onSurface
-                    : _muted(context),
-              ),
-            ),
+    return GestureDetector(
+      onTap: onTap,
+      onLongPress: onLongPress,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          color: selected ? accent.withValues(alpha: 0.2) : Colors.transparent,
+          border: Border.all(color: selected ? accent : _border(context)),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: accent.withValues(alpha: 0.35),
+                    blurRadius: 14,
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+            color: selected
+                ? Theme.of(context).colorScheme.onSurface
+                : _muted(context),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
@@ -412,7 +399,6 @@ class DeviceTile extends StatelessWidget {
     required this.glyph,
     required this.label,
     required this.accent,
-    this.id,
     this.caption,
     this.active = false,
     this.outline = false,
@@ -435,24 +421,9 @@ class DeviceTile extends StatelessWidget {
   final int span;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
-  final String? id;
 
   @override
   Widget build(BuildContext context) {
-    final tile = _tileBody(context);
-    if (id == null) return tile;
-    return LongPressDraggable<String>(
-      data: id!,
-      feedback: Material(
-        color: Colors.transparent,
-        child: SizedBox(width: width * span + 12.0 * (span - 1), child: tile),
-      ),
-      childWhenDragging: Opacity(opacity: 0.35, child: tile),
-      child: tile,
-    );
-  }
-
-  Widget _tileBody(BuildContext context) {
     final dark = _isDark(context);
     final scheme = Theme.of(context).colorScheme;
     final totalWidth = width * span + 12.0 * (span - 1);
@@ -550,6 +521,7 @@ class DeviceTile extends StatelessWidget {
                 child: InkWell(
                   borderRadius: radius,
                   onTap: onTap,
+                  onLongPress: onLongPress,
                   child: Center(child: inside),
                 ),
               ),
