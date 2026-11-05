@@ -77,6 +77,7 @@ class AppSettings {
     this.rooms = defaultRooms,
     this.roomOf = const <String, int>{},
     this.order = const <String, int>{},
+    this.groupOf = const <String, String>{},
   });
 
   final String title;
@@ -101,6 +102,7 @@ class AppSettings {
   final List<String> rooms;
   final Map<String, int> roomOf; // legacy, unused since 4.0
   final Map<String, int> order; // device id -> position in its room
+  final Map<String, String> groupOf; // device id -> section chosen in the app
 
   Device get device {
     if (devices.isEmpty) {
@@ -189,6 +191,13 @@ class AppSettings {
           if (e.key is String && e.value is int)
             e.key as String: e.value as int,
     };
+    final rawGroupOf = json['groupOf'];
+    final groupOf = <String, String>{
+      if (rawGroupOf is Map)
+        for (final e in rawGroupOf.entries)
+          if (e.key is String && e.value is String)
+            e.key as String: e.value as String,
+    };
     final roomOf = <String, int>{
       if (rawRoomOf is Map)
         for (final e in rawRoomOf.entries)
@@ -223,6 +232,7 @@ class AppSettings {
       rooms: rooms.isEmpty ? d.rooms : rooms,
       roomOf: roomOf,
       order: order,
+      groupOf: groupOf,
     );
   }
 }

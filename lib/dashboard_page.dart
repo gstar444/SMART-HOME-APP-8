@@ -385,14 +385,6 @@ class _DashboardPageState extends State<DashboardPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.drive_file_move_outlined),
-              title: Text(tr.ctlMenuMove),
-              onTap: () {
-                Navigator.pop(ctx);
-                _moveDevice(d);
-              },
-            ),
-            ListTile(
               leading: const Icon(Icons.delete_outline),
               title: Text(tr.ctlMenuDelete),
               onTap: () {
@@ -559,27 +551,6 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
       ),
     );
-  }
-
-  Future<void> _moveDevice(Esp32Device d) async {
-    final tr = Tr.of(_s);
-    final rooms = _esp.roomNames;
-    final picked = await showDialog<int>(
-      context: context,
-      builder: (ctx) => SimpleDialog(
-        title: Text(tr.moveToRoom),
-        children: [
-          for (var i = 0; i < rooms.length; i++)
-            SimpleDialogOption(
-              onPressed: () => Navigator.pop(ctx, i),
-              child: Text(rooms[i]),
-            ),
-        ],
-      ),
-    );
-    if (picked == null) return;
-    final error = await _esp.moveDevice(d.id, picked);
-    if (error != null) _snack(error);
   }
 
   // --------------------------------------------------------------- tiles
