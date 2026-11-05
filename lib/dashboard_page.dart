@@ -265,30 +265,29 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   /// Moves a button up (-1) or down (1) inside its own room, by swapping its order with the neighbour.
-  Future<void> _moveInRoom(Esp32Device d, int delta) async {
-    final room = _roomOfDevice(d, _esp.roomNames);
-    final inRoom =
-        [
-          for (final x in _esp.state?.devices ?? const <Esp32Device>[])
-            if (_roomOfDevice(x, _esp.roomNames) == room) x,
-        ]..sort(
-          (a, b) => (_sc.value.order[a.id] ?? 0).compareTo(
-            _sc.value.order[b.id] ?? 0,
-          ),
-        );
-    final i = inRoom.indexWhere((x) => x.id == d.id);
-    final j = i + delta;
-    if (i < 0 || j < 0 || j >= inRoom.length) return;
-    final order = Map<String, int>.from(_sc.value.order);
-    for (var k = 0; k < inRoom.length; k++) {
-      order[inRoom[k].id] = k;
-    }
-    final a = inRoom[i].id;
-    final b = inRoom[j].id;
-    final tmp = order[a]!;
-    order[a] = order[b]!;
-    order[b] = tmp;
-    await _sc.update(_sc.value.copyWith(order: order));
+
+  /// Chooses the section (group) a button is shown in. Kept in the app only.
+  Future<void> _changeSection(Esp32Device d) async {
+    final sections = <String>{
+      for (final x in _esp.state?.devices ?? const <Esp32Device>[])
+        _sc.value.groupOf[x.id] ?? x.group,
+    }.toList()..sort();
+    final picked = await showDialog<String>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('सेक्शन चुनें'),
+        children: [
+          for (final g in sections)
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(ctx, g),
+              child: Text(g),
+            ),
+        ],
+      ),
+    );
+    if (picked == null) return;
+    final map = Map<String, String>.from(_sc.value.groupOf)..[d.id] = picked;
+    await _sc.update(_sc.value.copyWith(groupOf: map));
     if (mounted) setState(() {});
   }
 
@@ -369,19 +368,11 @@ class _DashboardPageState extends State<DashboardPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.arrow_upward),
-              title: const Text('ऊपर ले जाएँ'),
+              leading: const Icon(Icons.view_list_outlined),
+              title: const Text('सेक्शन बदलें'),
               onTap: () {
                 Navigator.pop(ctx);
-                _moveInRoom(d, -1);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.arrow_downward),
-              title: const Text('नीचे ले जाएँ'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _moveInRoom(d, 1);
+                _changeSection(d);
               },
             ),
             ListTile(

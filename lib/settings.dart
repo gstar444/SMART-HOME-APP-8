@@ -130,6 +130,7 @@ class AppSettings {
     List<String>? rooms,
     Map<String, int>? roomOf,
     Map<String, int>? order,
+    Map<String, String>? groupOf,
   }) {
     return AppSettings(
       title: title ?? this.title,
@@ -148,6 +149,7 @@ class AppSettings {
       rooms: rooms ?? this.rooms,
       roomOf: roomOf ?? this.roomOf,
       order: order ?? this.order,
+      groupOf: groupOf ?? this.groupOf,
     );
   }
 
