@@ -597,7 +597,24 @@ class Esp32Controller extends ChangeNotifier
 
   // ----------------------------------------------------------------- http
   // Try the saved IP first; if the board moved (DHCP), find it by its mDNS name.
+  String? _cachedUrl;
+  DateTime? _cachedAt;
+
   Future<String> _resolveUrl() async {
+    final c = _cachedUrl;
+    final at = _cachedAt;
+    if (c != null &&
+        at != null &&
+        DateTime.now().difference(at) < const Duration(seconds: 60)) {
+      return c;
+    }
+    final url = await _resolveUrlUncached();
+    _cachedUrl = url;
+    _cachedAt = DateTime.now();
+    return url;
+  }
+
+  Future<String> _resolveUrlUncached() async {
     final saved = _settings.value.activeUrl;
     if (await _reachable(saved)) return saved;
     var found = await _discoverByMdns();
