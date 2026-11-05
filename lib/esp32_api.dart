@@ -640,7 +640,7 @@ class Esp32Controller extends ChangeNotifier
         baseUrl: url,
         token: null,
         client: _client,
-      ).call('GET', '/api/v2/info').timeout(const Duration(seconds: 2));
+      ).call('GET', '/api/v2/info').timeout(const Duration(milliseconds: 800));
       return res['board'] == 'sh-282160' ||
           (res['board'] as String?)?.startsWith('sh-') == true;
     } catch (_) {
@@ -680,7 +680,7 @@ class Esp32Controller extends ChangeNotifier
 
   Future<String?> _discoverByMdns() {
     return _discoverByMdnsInner().timeout(
-      const Duration(seconds: 4),
+      const Duration(milliseconds: 1500),
       onTimeout: () => null,
     );
   }
