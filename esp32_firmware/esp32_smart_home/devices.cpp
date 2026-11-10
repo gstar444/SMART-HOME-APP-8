@@ -230,23 +230,8 @@ static void touchTick(uint32_t now) {
   gTouchWasDown = down;
 }
 
-// ---- Fan thermostat: ON when hot, OFF when cool (gap between them so it does not chatter) ----
-static const float kFanOnAbove = 30.0f;   // °C: fan ON when temperature goes above this
-static const float kFanOffBelow = 28.0f;  // °C: fan OFF when temperature falls below this
-
-static void fanTick() {
-  if (isnan(gTemp)) return;                 // no sensor reading: do nothing
-  int fan = -1;
-  for (int i = 0; i < cfg.nDevices; i++)
-    if (!strcmp(cfg.devices[i].type, "switch") && !strcmp(cfg.devices[i].icon, "fan")) { fan = i; break; }
-  if (fan < 0) return;                      // no fan device configured
-  if (!rt[fan].on && gTemp > kFanOnAbove) devSet(fan, true, false);
-  if (rt[fan].on && gTemp < kFanOffBelow) devSet(fan, false, false);
-}
-
 void devTick(uint32_t now) {
   touchTick(now);
-  fanTick();
   // PIR inputs
   for (int i = 0; i < cfg.nDevices; i++) {
     if (!rt[i].driven || strcmp(cfg.devices[i].type, "pir") != 0) continue;
