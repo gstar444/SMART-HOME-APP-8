@@ -230,22 +230,8 @@ static void touchTick(uint32_t now) {
   gTouchWasDown = down;
 }
 
-// ---- Fan thermostat: ON when hot, OFF when cool (limits set in the app) ----
-static bool fanArmed = false;
-static void fanTick() {
-  if (isnan(gTemp)) { fanArmed = false; return; }
-  if (!fanArmed) { if (gTemp < cfg.board.fanOffBelow) fanArmed = true; return; }
-  int fan = -1;
-  for (int i = 0; i < cfg.nDevices; i++)
-    if (!strcmp(cfg.devices[i].type, "switch") && !strcmp(cfg.devices[i].icon, "fan")) { fan = i; break; }
-  if (fan < 0) return;
-  if (!rt[fan].on && gTemp > cfg.board.fanOnAbove) devSet(fan, true, false);
-  if (rt[fan].on && gTemp < cfg.board.fanOffBelow) devSet(fan, false, false);
-}
-
 void devTick(uint32_t now) {
   touchTick(now);
-  fanTick();
   // PIR inputs
   for (int i = 0; i < cfg.nDevices; i++) {
     if (!rt[i].driven || strcmp(cfg.devices[i].type, "pir") != 0) continue;

@@ -291,58 +291,6 @@ class _DashboardPageState extends State<DashboardPage> {
     if (mounted) setState(() {});
   }
 
-  Future<void> _fanLimitsDialog() async {
-    final cur = await _esp.getFanLimits();
-    final onCtl = TextEditingController(text: (cur?.$1 ?? 30).toString());
-    final offCtl = TextEditingController(text: (cur?.$2 ?? 28).toString());
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('पंखे की सीमा (°C)'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: onCtl,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: const InputDecoration(labelText: 'इससे ऊपर पंखा ON'),
-            ),
-            TextField(
-              controller: offCtl,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: const InputDecoration(
-                labelText: 'इससे नीचे पंखा OFF',
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('रद्द करें'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('सेव'),
-          ),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    final on = double.tryParse(onCtl.text.trim());
-    final off = double.tryParse(offCtl.text.trim());
-    if (on == null || off == null || off >= on) {
-      _snack('सीमा सही नहीं है (OFF, ON से कम होना चाहिए)');
-      return;
-    }
-    final err = await _esp.setFanLimits(on, off);
-    _snack(err ?? 'पंखे की सीमा सेव हो गई');
-  }
-
   Future<void> _editControl(Esp32Device d) async {
     final tr = Tr.of(_s);
     final st = _esp.local.state;
@@ -650,7 +598,6 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
         label: tr.tempSensor,
         onTap: () => _showTemp(st),
-        onLongPress: () => _fanLimitsDialog(),
       ),
     );
     tiles.add(

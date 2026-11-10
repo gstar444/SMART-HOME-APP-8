@@ -274,8 +274,6 @@ void configToJson(JsonDocument& doc, bool redact) {
   b["relayActiveLow"] = cfg.board.relayActiveLow;
   b["resetPin"] = cfg.board.resetPin;
   b["tz"] = (const char*)cfg.board.tz;
-  b["fanOffBelow"] = cfg.board.fanOffBelow;
-  b["fanOnAbove"] = cfg.board.fanOnAbove;
 
   JsonObject w = doc["wifi"].to<JsonObject>();
   w["ssid"] = (const char*)cfg.wifi.ssid;
@@ -342,8 +340,6 @@ static const char* jsonToConfig(JsonVariantConst root, Config& t, bool strict, b
     t.board.psram = jBool(b["psram"], t.board.psram);
     t.board.relayActiveLow = jBool(b["relayActiveLow"], t.board.relayActiveLow);
     t.board.resetPin = (int16_t)jInt(b["resetPin"], t.board.resetPin);
-  if (b["fanOffBelow"].is<float>()) t.board.fanOffBelow = b["fanOffBelow"].as<float>();
-  if (b["fanOnAbove"].is<float>()) t.board.fanOnAbove = b["fanOnAbove"].as<float>();
     jStr(t.board.tz, sizeof(t.board.tz), b["tz"], t.board.tz, false);
     if (strict) { const char* e = validateBoard(t.board); if (e) return e; }
   }

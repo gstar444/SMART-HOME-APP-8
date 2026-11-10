@@ -389,8 +389,6 @@ static void hBoardConfig() {
   if (o["psram"].is<bool>()) nb.psram = o["psram"].as<bool>();
   if (o["relayActiveLow"].is<bool>()) nb.relayActiveLow = o["relayActiveLow"].as<bool>();
   if (o["resetPin"].is<int>()) nb.resetPin = (int16_t)o["resetPin"].as<int>();
-  if (o["fanOnAbove"].is<float>()) nb.fanOnAbove = o["fanOnAbove"].as<float>();
-  if (o["fanOffBelow"].is<float>()) nb.fanOffBelow = o["fanOffBelow"].as<float>();
   const char* e = validateBoard(nb);
   BoardTarget t;
   if (!e && strcmp(nb.profile, "auto") != 0 && (!targetFromName(nb.profile, &t) || t != gTarget)) e = "profile_mismatch";

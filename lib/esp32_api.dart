@@ -160,8 +160,6 @@ abstract interface class LocalBoard implements Listenable {
   Future<void> refresh();
   Future<void> reloadToken();
   Future<String?> setDevice(String id, bool on);
-  Future<String?> setFanLimits(double onAbove, double offBelow);
-  Future<(double, double)?> getFanLimits();
   Future<String?> setDnd(bool on);
   Future<String?> runScene(String id);
   Future<String?> addDevice({
@@ -712,32 +710,6 @@ class Esp32Controller extends ChangeNotifier
     final url = await _resolveUrl();
     final http = BoardHttp(baseUrl: url, token: _token, client: _client);
     return http.call(method, path, body: body);
-  }
-
-  @override
-  Future<String?> setFanLimits(double onAbove, double offBelow) async {
-    try {
-      await _call('POST', 'config/board',
-          body: {'fanOnAbove': onAbove, 'fanOffBelow': offBelow});
-      return null;
-    } catch (e) {
-      return _friendly(e);
-    }
-  }
-
-  @override
-  Future<(double, double)?> getFanLimits() async {
-    try {
-      final res = await _call('GET', 'config');
-      final b = res['board'];
-      if (b is! Map) return null;
-      final on = b['fanOnAbove'];
-      final off = b['fanOffBelow'];
-      if (on is! num || off is! num) return null;
-      return (on.toDouble(), off.toDouble());
-    } catch (_) {
-      return null;
-    }
   }
 
   String _friendly(Object e) =>
