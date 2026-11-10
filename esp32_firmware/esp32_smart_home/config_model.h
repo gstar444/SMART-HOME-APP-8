@@ -162,6 +162,8 @@ struct CfgBoard {
   bool psram;          // module has PSRAM (WROVER, S3 R-variants): reserves its GPIOs
   bool relayActiveLow;
   int16_t resetPin;    // -1 = chip default BOOT button
+  float fanOnAbove = 30.0f;     // fan ON above this temperature (°C)
+  float fanOffBelow = 28.0f;    // fan OFF below this temperature (°C)
   char tz[40];         // POSIX TZ string, e.g. "IST-5:30"
 };
 
