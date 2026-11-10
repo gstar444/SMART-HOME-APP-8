@@ -57,6 +57,7 @@ class FakeLocal extends ChangeNotifier implements LocalBoard {
   Future<void> reloadToken() async {}
   @override
   Future<String?> setFanLimits(double onAbove, double offBelow) async => null;
+  Future<(double, double)?> getFanLimits() async => (30.0, 28.0);
 
   Future<String?> setDevice(String id, bool on) async {
     calls.add('set:$id:$on');

@@ -292,8 +292,9 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _fanLimitsDialog() async {
-    final onCtl = TextEditingController(text: '30');
-    final offCtl = TextEditingController(text: '28');
+    final cur = await _esp.getFanLimits();
+    final onCtl = TextEditingController(text: (cur?.$1 ?? 30).toString());
+    final offCtl = TextEditingController(text: (cur?.$2 ?? 28).toString());
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(

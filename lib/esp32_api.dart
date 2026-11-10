@@ -161,6 +161,7 @@ abstract interface class LocalBoard implements Listenable {
   Future<void> reloadToken();
   Future<String?> setDevice(String id, bool on);
   Future<String?> setFanLimits(double onAbove, double offBelow);
+  Future<(double, double)?> getFanLimits();
   Future<String?> setDnd(bool on);
   Future<String?> runScene(String id);
   Future<String?> addDevice({
@@ -721,6 +722,21 @@ class Esp32Controller extends ChangeNotifier
       return null;
     } catch (e) {
       return _friendly(e);
+    }
+  }
+
+  @override
+  Future<(double, double)?> getFanLimits() async {
+    try {
+      final res = await _call('GET', 'config');
+      final b = res['board'];
+      if (b is! Map) return null;
+      final on = b['fanOnAbove'];
+      final off = b['fanOffBelow'];
+      if (on is! num || off is! num) return null;
+      return (on.toDouble(), off.toDouble());
+    } catch (_) {
+      return null;
     }
   }
 

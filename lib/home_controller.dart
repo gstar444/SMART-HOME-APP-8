@@ -383,6 +383,8 @@ class HomeController extends ChangeNotifier {
 
   Future<String?> setFanLimits(double onAbove, double offBelow) => local.setFanLimits(onAbove, offBelow);
 
+  Future<(double, double)?> getFanLimits() => local.getFanLimits();
+
   Future<String?> setDevice(String id, bool on) async {
     final sp = splitCompositeId(id);
     final dev = _device(id);
