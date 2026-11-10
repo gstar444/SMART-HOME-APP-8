@@ -209,25 +209,16 @@ static void saveLastStateIfDue(uint32_t now) {
   f.close();
 }
 
-// ---- Touch button on GPIO 2 (T2): one tap turns every switch ON, the next tap OFF ----
-// GPIO 2 is a strapping pin, so it is never offered as a relay pin; it is free for touch.
+// ---- Touch key (TTP223 module) on GPIO 2 ----
+// The module output is digital: HIGH while touched, LOW otherwise.
+// One tap (LOW -> HIGH edge) turns every switch ON, the next tap turns them OFF.
 static const int kTouchPin = 2;
-static uint32_t gTouchBaseline = 0;
-static bool gTouchReady = false;
 static bool gTouchWasDown = false;
 static uint32_t gTouchLastMs = 0;
 
-static void touchCalibrate() {  // keep your hand off the pad for the first second after boot
-  uint32_t sum = 0;
-  for (int i = 0; i < 20; i++) { sum += touchRead(kTouchPin); delay(5); }
-  gTouchBaseline = sum / 20;
-  gTouchReady = true;
-}
-
 static void touchTick(uint32_t now) {
-  if (!gTouchReady) { touchCalibrate(); return; }
-  uint32_t v = touchRead(kTouchPin);
-  bool down = v < (gTouchBaseline * 6) / 10;        // touched = reading falls below 60% of rest
+  pinMode(kTouchPin, INPUT);
+  bool down = digitalRead(kTouchPin) == HIGH;
   if (down && !gTouchWasDown && (uint32_t)(now - gTouchLastMs) > 400UL) {
     gTouchLastMs = now;
     bool anyOn = false;
