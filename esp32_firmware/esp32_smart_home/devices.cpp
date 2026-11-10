@@ -209,7 +209,38 @@ static void saveLastStateIfDue(uint32_t now) {
   f.close();
 }
 
+// ---- Touch button on GPIO 2 (T2): one tap turns every switch ON, the next tap OFF ----
+// GPIO 2 is a strapping pin, so it is never offered as a relay pin; it is free for touch.
+static const int kTouchPin = 2;
+static uint32_t gTouchBaseline = 0;
+static bool gTouchReady = false;
+static bool gTouchWasDown = false;
+static uint32_t gTouchLastMs = 0;
+
+static void touchCalibrate() {  // keep your hand off the pad for the first second after boot
+  uint32_t sum = 0;
+  for (int i = 0; i < 20; i++) { sum += touchRead(kTouchPin); delay(5); }
+  gTouchBaseline = sum / 20;
+  gTouchReady = true;
+}
+
+static void touchTick(uint32_t now) {
+  if (!gTouchReady) { touchCalibrate(); return; }
+  uint32_t v = touchRead(kTouchPin);
+  bool down = v < (gTouchBaseline * 6) / 10;        // touched = reading falls below 60% of rest
+  if (down && !gTouchWasDown && (uint32_t)(now - gTouchLastMs) > 400UL) {
+    gTouchLastMs = now;
+    bool anyOn = false;
+    for (int i = 0; i < cfg.nDevices; i++)
+      if (!strcmp(cfg.devices[i].type, "switch") && rt[i].on) anyOn = true;
+    for (int i = 0; i < cfg.nDevices; i++)
+      if (!strcmp(cfg.devices[i].type, "switch")) devSet(i, !anyOn, true);
+  }
+  gTouchWasDown = down;
+}
+
 void devTick(uint32_t now) {
+  touchTick(now);
   // PIR inputs
   for (int i = 0; i < cfg.nDevices; i++) {
     if (!rt[i].driven || strcmp(cfg.devices[i].type, "pir") != 0) continue;
