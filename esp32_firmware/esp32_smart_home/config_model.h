@@ -22,6 +22,7 @@
 */
 #pragma once
 
+#include <math.h>
 #include <stdlib.h>
 
 #include "board_profile.h"
@@ -253,8 +254,8 @@ inline void configDefaults(Config& c) {
   copyStr(c.board.profile, sizeof(c.board.profile), "auto");
   c.board.psram = false;
   c.board.relayActiveLow = true;
-  c.board.fanOnAbove = 30.0f;
-  c.board.fanOffBelow = 28.0f;
+  c.board.fanOnAbove = NAN;
+  c.board.fanOffBelow = NAN;
   c.board.resetPin = -1;
   copyStr(c.board.tz, sizeof(c.board.tz), "UTC0");
 
