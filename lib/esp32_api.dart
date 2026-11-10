@@ -716,7 +716,7 @@ class Esp32Controller extends ChangeNotifier
   @override
   Future<String?> setFanLimits(double onAbove, double offBelow) async {
     try {
-      await _call('POST', '/api/v2/config/board',
+      await _call('POST', 'config/board',
           body: {'fanOnAbove': onAbove, 'fanOffBelow': offBelow});
       return null;
     } catch (e) {
