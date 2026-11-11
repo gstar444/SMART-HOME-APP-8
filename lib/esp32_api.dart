@@ -616,18 +616,40 @@ class Esp32Controller extends ChangeNotifier
 
   Future<String> _resolveUrlUncached() async {
     final saved = _settings.value.activeUrl;
-    if (await _reachable(saved)) return saved;
-    var found = await _discoverByMdns();
-    found ??= await _scanSubnet(saved);
-    if (found != null && found != saved) {
+    // Race the three ways at once; the first board that answers wins.
+    final racers = <Future<String?>>[
+      _reachable(saved).then((ok) => ok ? saved : null),
+      _discoverByMdns(),
+      _scanSubnet(saved),
+    ];
+    final found = await _firstNonNull(racers) ?? saved;
+    if (found != saved) {
       final s = _settings.value;
       final updated = [
         for (final d in s.devices) d.url == saved ? d.copyWith(url: found) : d,
       ];
       await _settings.update(s.copyWith(devices: updated));
-      return found;
     }
-    return saved;
+    return found;
+  }
+
+  /// Completes with the first non-null result, or null if every racer returns null.
+  Future<String?> _firstNonNull(List<Future<String?>> futures) {
+    final c = Completer<String?>();
+    var left = futures.length;
+    for (final f in futures) {
+      f
+          .then((v) {
+            if (v != null && !c.isCompleted) c.complete(v);
+            left--;
+            if (left == 0 && !c.isCompleted) c.complete(null);
+          })
+          .catchError((_) {
+            left--;
+            if (left == 0 && !c.isCompleted) c.complete(null);
+          });
+    }
+    return c.future;
   }
 
   // Last resort when mDNS is blocked (2.4 GHz vs 5 GHz, or multicast filtered):
