@@ -506,10 +506,11 @@ class _DashboardPageState extends State<DashboardPage> {
       _snack(error);
       return;
     }
-    if (mounted)
+    if (mounted) {
       setState(
         () => _room = math.max(0, math.min(_room, _esp.roomNames.length - 2)),
       );
+    }
   }
 
   void _roomMenu(int index) {
